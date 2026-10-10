@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frappe script board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f8; --panel:#e9edf3; --editor:#fcfdfe; --ink:#1b2530; --mute:#64707e; --line:#d5dce5;
+  --accent:#1c64d8; --accent-ink:#fff; --sel:rgba(28,100,216,.16); --gut:#8693a2;
+  --k:#7a3fd1; --s:#18764f; --n:#b04e0a; --c:#7a8695; --f:#1c5ab8; --b:#0b7894; --fr:#c92a63; --a:#2f3d4d;
+  --sk:#c2410c; --tb:#0f766e; --pm:#b4175f; --sv:#9a5b14;
+  --err:#d1342f; --warn:#c27a00; --info:#3b7bd8; --shadow:0 10px 30px rgba(20,30,45,.18);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141a; --panel:#161c24; --editor:#12181f; --ink:#d9e0e8; --mute:#8896a6; --line:#26303b;
+    --accent:#5aa9ff; --accent-ink:#06192e; --sel:rgba(90,169,255,.22); --gut:#566474;
+    --k:#c6a4ff; --s:#80d7aa; --n:#f0b56e; --c:#6a7a8b; --f:#7db8ff; --b:#5fd0e8; --fr:#ff8fb6; --a:#c3cdd9;
+    --sk:#ffa874; --tb:#5eead4; --pm:#f9a8d4; --sv:#e6bd7c;
+    --err:#ff6b64; --warn:#f0b43c; --info:#6fa8ff; --shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --panel:#161c24; --editor:#12181f; --ink:#d9e0e8; --mute:#8896a6; --line:#26303b;
+  --accent:#5aa9ff; --accent-ink:#06192e; --sel:rgba(90,169,255,.22); --gut:#566474;
+  --k:#c6a4ff; --s:#80d7aa; --n:#f0b56e; --c:#6a7a8b; --f:#7db8ff; --b:#5fd0e8; --fr:#ff8fb6; --a:#c3cdd9;
+  --sk:#ffa874; --tb:#5eead4; --pm:#f9a8d4; --sv:#e6bd7c;
+  --err:#ff6b64; --warn:#f0b43c; --info:#6fa8ff; --shadow:0 10px 30px rgba(0,0,0,.5);
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.top{display:flex;align-items:center;gap:14px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px}
+.mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font:600 12px "IBM Plex Mono",monospace}
+h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.1px}
+.note{margin:0;color:var(--mute);font-size:12.5px;flex:1 1 260px}
+.actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:transparent;border-radius:6px;padding:5px 11px;font-size:13px}
+.btn:hover{background:var(--sel)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+.btn.primary:hover{filter:brightness(1.08)}
+.only-narrow{display:none}
+.main{display:grid;grid-template-columns:292px minmax(0,1fr);min-height:0}
+#side{display:flex;flex-direction:column;min-height:0;background:var(--panel);border-right:1px solid var(--line)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;font-size:13px;border:0;background:transparent;padding:9px 4px;color:var(--mute);border-bottom:2px solid transparent;font-weight:500}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{display:none;flex:1;min-height:0;overflow:auto;padding:10px}
+.pane.on{display:block}
+.search{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--editor);border-radius:6px;padding:6px 9px;margin-bottom:8px}
+details.tbl{margin:0 0 4px}
+details.tbl summary{cursor:pointer;padding:4px 2px;font-weight:500;list-style-position:inside}
+details.tbl summary small{color:var(--mute);font-weight:400;margin-left:4px}
+.cols{display:flex;flex-wrap:wrap;gap:3px;padding:2px 0 8px 14px}
+.chip{border:1px solid var(--line);background:var(--editor);border-radius:4px;padding:1px 6px;font:12px "IBM Plex Mono",monospace;color:var(--a)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.item{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--editor);margin-bottom:6px}
+.item b{font-weight:600}
+.item p{margin:2px 0 0;color:var(--mute);font-size:12.5px}
+.item .grow{flex:1;min-width:0;text-align:left;border:0;background:transparent;padding:0}
+.item .x{border:0;background:transparent;color:var(--mute);padding:0 4px}
+.row{display:flex;gap:6px;margin-bottom:8px}
+.row .search{margin:0}
+.cg{margin:12px 0 5px;font-size:12.5px;font-weight:600;color:var(--mute)}
+.ch{border:1px solid var(--line);border-radius:6px;background:var(--editor);margin-bottom:7px;overflow:hidden}
+.ch .hd{display:flex;align-items:center;gap:6px;padding:6px 8px 0}
+.ch .hd b{font-weight:600;flex:1;min-width:0}
+.ch .wr{font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:4px;padding:0 5px}
+.ch p{margin:2px 8px 0;color:var(--mute);font-size:12.5px}
+.ch pre{margin:6px 0 0;padding:7px 8px;border-top:1px solid var(--line);font:12px/1.5 "IBM Plex Mono",monospace;overflow:auto;white-space:pre;color:var(--a)}
+.ch pre mark{background:var(--sel);color:var(--accent);border-radius:3px;padding:0 2px}
+.ch .bt{display:flex;gap:6px;padding:0 8px 7px}
+.ch .bt button{border:1px solid var(--line);background:transparent;border-radius:5px;padding:2px 9px;font-size:12px}
+.ch .bt button:hover{background:var(--sel)}
+.empty{color:var(--mute);font-size:13px;padding:6px 2px}
+.work{display:grid;grid-template-rows:minmax(0,1fr) auto auto;min-height:0;min-width:0}
+.editor{display:flex;min-height:0;min-width:0;background:var(--editor);position:relative}
+.gutter{width:50px;flex:none;overflow:hidden;border-right:1px solid var(--line);background:var(--editor);font:12.5px/22px "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--gut);text-align:right}
+#nums{padding:10px 0;will-change:transform}
+.ln{padding-right:10px;position:relative}
+.ln.error{color:var(--err);font-weight:600}.ln.warn{color:var(--warn);font-weight:600}.ln.info{color:var(--info)}
+.code{position:relative;flex:1;min-width:0;overflow:hidden;font:13.5px/22px "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;letter-spacing:0}
+#hl,#ta{position:absolute;margin:0;padding:10px 14px 10px 14px;border:0;font:inherit;letter-spacing:0;white-space:pre;tab-size:4;overflow-wrap:normal;word-break:normal}
+#hl{top:0;left:0;pointer-events:none;color:var(--ink);will-change:transform}
+#ta{inset:0;width:100%;height:100%;box-sizing:border-box;resize:none;background:transparent;color:transparent;caret-color:var(--ink);outline:none;overflow:auto}
+#ta::selection{background:var(--sel);color:transparent}
+#hl .k{color:var(--k)}#hl .s{color:var(--s)}#hl .n{color:var(--n)}#hl .c{color:var(--c);font-style:italic}#hl .f{color:var(--f)}#hl .b{color:var(--b)}#hl .fr{color:var(--fr);font-weight:500}#hl .a{color:var(--a)}
+#hl .sk{color:var(--sk)}#hl .tb{color:var(--tb);font-weight:500}#hl .pm{color:var(--pm)}#hl .sv{color:var(--sv)}
+.pop{position:absolute;z-index:5;min-width:300px;max-width:min(520px,92%);background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);font:13px/1.35 "IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
+.pop[hidden]{display:none}
+.plist{max-height:236px;overflow:auto}
+.it{display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer}
+.it.sel{background:var(--sel)}
+.kd{flex:none;width:18px;height:18px;border-radius:4px;display:grid;place-items:center;font:600 11px "IBM Plex Mono",monospace;background:var(--editor);border:1px solid var(--line);color:var(--mute)}
+.k-method .kd,.k-bi .kd{color:var(--f)}.k-module .kd,.k-class .kd{color:var(--fr)}.k-col .kd,.k-field .kd,.k-tbl .kd{color:var(--tb)}.k-snip .kd{color:var(--k)}.k-sql .kd{color:var(--sk)}
+.it .lb{font:13px "IBM Plex Mono",monospace;white-space:nowrap}
+.it .dt{margin-left:auto;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.pdoc{border-top:1px solid var(--line);padding:6px 9px;color:var(--mute);font-size:12.5px;max-height:84px;overflow:auto}
+.pdoc code{display:block;color:var(--ink);font:12px "IBM Plex Mono",monospace;margin-bottom:2px;white-space:normal;word-break:break-word}
+.dock{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);border-top:1px solid var(--line);background:var(--panel);height:190px}
+.dock>#hint{overflow:auto;padding:8px 12px;min-width:0}
+.dock h2{margin:0 0 4px;font-size:12.5px;font-weight:600;color:var(--mute)}
+.grip{position:absolute;left:0;right:0;top:-5px;height:9px;cursor:row-resize;z-index:3;touch-action:none}
+.dright{display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--line)}
+.dtabs{display:flex;align-items:center;gap:2px;padding:3px 8px 0;flex:none;flex-wrap:wrap}
+.dtabs>button{border:0;background:transparent;padding:3px 8px;font-size:12.5px;font-weight:600;color:var(--mute);border-bottom:2px solid transparent}
+.dtabs>button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.dtabs .sp{flex:1}
+.otools{display:flex;gap:4px}
+.otools[hidden]{display:none}
+.otools button{border:1px solid var(--line);background:transparent;border-radius:5px;padding:1px 8px;font-size:12px}
+.otools button:hover,.otools button.on{background:var(--sel)}
+.dpane{display:none;flex:1;min-height:0;overflow:auto;padding:6px 12px 8px}
+.dpane.on{display:block}
+.ometa{font-size:12px;color:var(--mute);margin-bottom:5px}
+.ometa.bad{color:var(--err)}
+#out pre{margin:0 0 8px;font:12.5px/1.5 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;white-space:pre;color:var(--ink)}
+#out pre.txt{color:var(--a)}
+#out pre.tb{color:var(--err)}
+#out .jk{color:var(--f)}#out .js{color:var(--s)}#out .jn{color:var(--n)}#out .jl{color:var(--k)}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.conn{display:inline-flex;align-items:center;gap:7px;max-width:240px;padding:0 4px 0 10px;cursor:pointer}
+.conn:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.conn select{border:0;background:transparent;color:inherit;font:inherit;font-size:13px;padding:5px 2px;min-width:0;max-width:210px;text-overflow:ellipsis;cursor:pointer;outline:none}
+.conn select option{background:var(--panel);color:var(--ink)}
+.cx{display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--editor);margin-top:7px}
+.cx.on{border-color:var(--accent)}
+.cx input[type=radio]{margin-top:8px;accent-color:var(--accent);flex:none}
+.cxm{flex:1;min-width:0}
+.cxn{width:100%;box-sizing:border-box;border:1px solid transparent;background:transparent;border-radius:5px;padding:3px 6px;font-weight:600;font-size:13.5px}
+.cxn:hover{border-color:var(--line)}.cxn:focus{border-color:var(--accent);background:var(--panel);outline:none}
+.cxn.bad{border-color:var(--err)}
+.cxi{display:block;padding:0 7px;font-size:12px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cxi .need{color:var(--warn)}
+.cxe{display:block;padding:0 7px;font-size:12px;color:var(--err)}
+.cxe:empty{display:none}
+.cx .btn{padding:3px 9px;font-size:12px;flex:none}
+.cx .btn.danger{border-color:var(--err);color:var(--err)}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--gut)}
+.dot.on{background:var(--s)}
+.field{display:block;margin:10px 0 0}
+.field>span{display:block;font-size:12.5px;font-weight:500;margin-bottom:3px;color:var(--ink)}
+.field input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--editor);border-radius:6px;padding:6px 9px;font:12.5px "IBM Plex Mono",monospace}
+.field input.bad{border-color:var(--err)}
+.field small{display:block;min-height:17px;font-size:12px;color:var(--err)}
+.field .two{display:flex;gap:6px}
+.chk{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--mute);margin-top:2px}
+.howto{margin-top:10px;font-size:13px}
+.howto summary{cursor:pointer;font-weight:500}
+.howto code{font:12px "IBM Plex Mono",monospace;background:var(--editor);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.card .msg.bad{color:var(--err)}.card .msg.good{color:var(--s)}
+#hint .sg{font:12.5px "IBM Plex Mono",monospace;word-break:break-word}
+#hint .sg b{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+#hint p{margin:3px 0 0;color:var(--mute);font-size:12.5px}
+.dg{display:flex;gap:8px;align-items:baseline;padding:2px 0;border:0;background:transparent;width:100%;text-align:left;font-size:12.5px}
+.dg:hover{background:var(--sel)}
+.dg i{flex:none;width:8px;height:8px;border-radius:50%;margin-top:3px;align-self:flex-start;transform:translateY(2px)}
+.dg .error i{background:var(--err)}
+.lv-error i{background:var(--err)}.lv-warn i{background:var(--warn)}.lv-info i{background:var(--info)}
+.dg span.l{flex:none;color:var(--mute);font:12px "IBM Plex Mono",monospace;min-width:34px}
+.ok{color:var(--s);font-size:12.5px}
+.status{display:flex;gap:14px;padding:3px 12px;border-top:1px solid var(--line);color:var(--mute);font-size:12px;background:var(--panel)}
+.status .sp{flex:1}
+.pad{position:fixed;right:16px;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:420px;height:340px;min-width:300px;min-height:170px;max-width:96vw;max-height:88vh;z-index:13;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);resize:both;overflow:hidden}
+.pad[hidden]{display:none}
+.pad.min{height:auto!important;min-height:0;resize:none}
+.pad.min .pad-b{display:none}
+.pad-h{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--line);cursor:move;touch-action:none;user-select:none;flex:none}
+.pad.min .pad-h{border-bottom:0}
+.pad-h b{font-size:13px;font-weight:600}
+.pad-h .sp{flex:1}
+.pad-h label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mute);cursor:pointer}
+.pad-h button{border:0;background:transparent;color:var(--mute);width:24px;height:24px;border-radius:5px;font-size:14px;line-height:1}
+.pad-h button:hover{background:var(--sel);color:var(--ink)}
+.pad-b{display:flex;flex-direction:column;flex:1;min-height:0}
+#padTa{flex:1;min-height:0;width:100%;box-sizing:border-box;border:0;resize:none;background:var(--editor);padding:10px 12px;font:12.5px/1.5 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;white-space:pre;overflow:auto;outline:none;tab-size:2}
+.pad-f{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:6px 8px;border-top:1px solid var(--line);flex:none}
+.pad-f button{border:1px solid var(--line);background:transparent;border-radius:5px;padding:2px 9px;font-size:12px}
+.pad-f button:hover{background:var(--sel)}
+#padMsg{margin-left:auto;font-size:12px;color:var(--mute);max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#padMsg.err{color:var(--err)}
+.modal{position:fixed;inset:0;background:rgba(10,15,22,.5);display:grid;place-items:center;z-index:20;padding:16px}
+.modal[hidden]{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);width:min(620px,100%);max-height:88vh;overflow:auto;padding:16px 18px}
+.card h2{margin:0 0 8px;font-size:16px}
+.card p,.card li{color:var(--mute);font-size:13.5px}
+.card ul{padding-left:18px;margin:6px 0}
+.card textarea{width:100%;box-sizing:border-box;min-height:180px;border:1px solid var(--line);background:var(--editor);border-radius:6px;padding:8px;font:12.5px "IBM Plex Mono",monospace;resize:vertical}
+.card .bar{display:flex;gap:6px;justify-content:flex-end;margin-top:10px;align-items:center}
+.card .msg{margin-right:auto;font-size:13px;color:var(--mute)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:8px;font-size:13px;z-index:30;box-shadow:var(--shadow)}
+.toast[hidden]{display:none}
+@media (max-width:860px){
+  .pad{left:12px!important;right:12px!important;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;height:min(46vh,340px)}
+  .only-narrow{display:inline-block}
+  .main{grid-template-columns:minmax(0,1fr)}
+  #side{display:none;position:fixed;z-index:12;left:0;top:0;bottom:0;width:min(88vw,320px);box-shadow:var(--shadow);padding-top:env(safe-area-inset-top,0px)}
+  #side.open{display:flex}
+  .dock{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);height:240px}
+  .dock>#hint{max-height:64px}
+  .dright{border-left:0;border-top:1px solid var(--line)}
+  .conn{max-width:170px}.conn select{max-width:140px}
+  .note{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark">py</span><h1>Frappe script board</h1></div>
+    <p class="note">Run executes read-only queries on your connected site. Changes are always rolled back.</p>
+    <div class="actions">
+      <button class="btn only-narrow" id="btnPanel">Panel</button>
+      <button class="btn" id="btnPad">Notes pad</button>
+      <button class="btn" id="btnInfo">Help</button>
+      <button class="btn" id="btnTheme">Theme</button>
+      <button class="btn" id="btnClear">Clear</button>
+      <button class="btn" id="btnCopy">Copy script</button>
+      <label class="btn conn" id="connWrap"><i class="dot" id="connDot"></i><select id="connSel" aria-label="Connection used by Run"></select></label>
+      <button class="btn primary" id="btnRun" title="Run on the connected site (Ctrl+Enter)">Run</button>
+    </div>
+  </header>
+  <div class="main">
+    <aside id="side">
+      <div class="tabs" role="tablist">
+        <button class="on" data-tab="schema" role="tab">Schema</button>
+        <button data-tab="cheat" role="tab">Cheatsheet</button>
+        <button data-tab="snips" role="tab">Snippets</button>
+        <button data-tab="saved" role="tab">Saved</button>
+      </div>
+      <section class="pane on" id="pane-schema">
+        <input class="search" id="schemaQ" placeholder="Search tables and columns" aria-label="Search schema">
+        <div id="schemaList"></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="btnImport">Add from JSON</button><button class="btn" id="btnResetSchema">Reset</button></div>
+      </section>
+      <section class="pane" id="pane-cheat">
+        <input class="search" id="cheatQ" placeholder="Search, e.g. get, set, loop" aria-label="Search cheatsheet">
+        <p class="empty" style="margin-top:0">Replace the CAPITAL placeholders with your own values.</p>
+        <div id="cheatList"></div>
+      </section>
+      <section class="pane" id="pane-snips"><div id="snipList"></div></section>
+      <section class="pane" id="pane-saved">
+        <div class="row"><input class="search" id="saveName" placeholder="Name this script" aria-label="Script name"><button class="btn" id="btnSave">Save</button></div>
+        <div id="savedList"></div>
+      </section>
+    </aside>
+    <section class="work">
+      <div class="editor">
+        <div class="gutter" aria-hidden="true"><div id="nums"></div></div>
+        <div class="code" id="code">
+          <pre id="hl" aria-hidden="true"></pre>
+          <textarea id="ta" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Script editor"></textarea>
+          <div class="pop" id="pop" hidden></div>
+        </div>
+      </div>
+      <div class="dock" id="dock">
+        <div class="grip" id="grip" title="Drag to resize"></div>
+        <div id="hint"></div>
+        <div class="dright">
+          <div class="dtabs"><button class="on" data-d="diags" id="dgTitle">Checks</button><button data-d="out" id="outTitle">Output</button><span class="sp"></span>
+            <span class="otools" id="otools" hidden><button id="oPretty" class="on">JSON</button><button id="oTbl">Table</button><button id="oRaw">Raw</button><button id="oCp">Copy</button><button id="oPad">To notes</button></span></div>
+          <div id="diags" class="dpane on"></div>
+          <div id="out" class="dpane"></div>
+        </div>
+      </div>
+      <div class="status"><span id="pos">Ln 1, Col 1</span><span id="count"></span><span class="sp"></span><span>Ctrl+Enter run · Ctrl+Space suggestions · Ctrl+/ comment · Tab indent</span></div>
+    </section>
+  </div>
+</div>
+<div class="pad" id="pad" hidden role="dialog" aria-label="Notes pad">
+  <div class="pad-h" id="padH"><b>Notes pad</b><span class="sp"></span>
+    <label title="Format objects and lists when you paste them"><input type="checkbox" id="padAuto" checked> Auto-format paste</label>
+    <button id="padMin" aria-label="Minimize" title="Minimize">&minus;</button><button id="padX" aria-label="Close" title="Close">&#10005;</button></div>
+  <div class="pad-b">
+    <textarea id="padTa" spellcheck="false" wrap="off" placeholder="Paste an object or list here.&#10;JSON and console output (single quotes, None, datetime.date(...)) are formatted for you."></textarea>
+    <div class="pad-f"><button id="padFmt">Format</button><button id="padCmp">Compact</button><button id="padTbl">Table</button><button id="padCp">Copy</button><button id="padClr">Clear</button><span id="padMsg"></span></div>
+  </div>
+</div>
+<div class="modal" id="modal" hidden><div class="card" id="card" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+/* ===================== DATA ===================== */
+const BASEC = "name owner creation modified modified_by docstatus idx".split(" ");
+const CHILDC = BASEC.concat("parent parentfield parenttype".split(" "));
+const cols = (s, base) => (base || BASEC).concat(s.split(/\s+/).filter(Boolean));
+const SCHEMA0 = {
+  "Sales Invoice": { cols: cols("title naming_series account_officer policy_name business_style print_format_label customer different_insured customer_name tax_id is_pos is_consolidated is_return is_debit_note is_renewal is_non_vat sale_type transaction_type is_commission_sales_invoice is_vat_inclusive is_various_suppliers adjustment_journal_entry company company_tax_id posting_date posting_time set_posting_time due_date effectivity expiry supplier_commission_rate commission_amount flat_amount_commission po_no territory currency conversion_rate selling_price_list price_list_currency department is_deferred_income less_withholding_tax remarks_llib total_qty base_total base_net_total total net_total tax_category base_total_taxes_and_charges total_taxes_and_charges apply_discount_on base_discount_amount discount_amount base_grand_total base_rounding_adjustment base_rounded_total base_in_words grand_total rounding_adjustment rounded_total in_words total_advance outstanding_amount write_off_amount base_paid_amount paid_amount letter_head language status customer_group is_internal_customer debit_to premiums_receivable premiums_payable clearing_account output_vat prepaid_tax commission_income deferred_income round_off_account party_account_currency is_opening remarks amount_eligible_for_commission commission_rate total_commission against_income_account amended_from return_against project cost_center") },
+  "Sales Invoice Item": { cols: cols("item_code supplier item_name coverage client_type policy_number supplier_commission_rate commission_amount flat_amount_commission total_sum_insured description item_group qty uom rate amount base_rate base_amount net_rate net_amount base_net_rate base_net_amount income_account expense_account cost_center warehouse", CHILDC) },
+  "Sales Taxes and Charges": { cols: cols("charge_type account_head additional_charge_type account_type description included_in_print_rate cost_center rate rate_llib atc atc_rate account_currency tax_amount total base_tax_amount base_total item_wise_tax_detail", CHILDC) },
+  "Payment Schedule": { cols: cols("due_date invoice_portion discount payment_amount outstanding paid_amount discounted_amount base_payment_amount", CHILDC) },
+  "Journal Entry": { cols: cols("title voucher_type naming_series posting_date company finance_book apply_tds total_amount total_amount_currency total_debit total_credit difference multi_currency is_opening cheque_no cheque_date user_remark remark bill_no bill_date due_date pay_to_recd_from mode_of_payment letter_head amended_from reversal_of") },
+  "Journal Entry Account": { cols: cols("account account_type party_type party cost_center project account_currency exchange_rate debit_in_account_currency debit credit_in_account_currency credit reference_type reference_name reference_due_date is_advance user_remark against_account", CHILDC) },
+  "GL Entry": { cols: cols("posting_date transaction_date account party_type party cost_center debit credit account_currency debit_in_account_currency credit_in_account_currency against against_voucher_type against_voucher voucher_type voucher_no remarks is_opening is_advance fiscal_year company finance_book is_cancelled project") },
+  "Payment Entry": { cols: cols("naming_series payment_type posting_date company mode_of_payment party_type party party_name paid_from paid_to paid_amount received_amount total_allocated_amount unallocated_amount difference_amount reference_no reference_date status remarks cost_center amended_from") },
+  "Payment Entry Reference": { cols: cols("reference_doctype reference_name due_date total_amount outstanding_amount allocated_amount exchange_rate", CHILDC) },
+  "Customer": { cols: cols("customer_name customer_type customer_group territory tax_id default_currency disabled mobile_no email_id") }
+};
+
+const mkApi = (n, p, d, ins, k) => ({ n, params: p === null ? null : p.split(",").map(s => s.trim()).filter(Boolean), doc: d, ins, kind: k || (p === null ? "prop" : "method") });
+const API = [
+  mkApi("log", "text", "Console output. In the System Console use log(text) instead of print(). It takes ONE value, so join with str(a) + \" \" + str(b)."),
+  mkApi("frappe.db", null, "Database helper. Reads: sql, get_value, exists, count.", null, "module"),
+  mkApi("frappe.utils", null, "Number, date and string helpers: flt, cint, getdate, add_days...", null, "module"),
+  mkApi("frappe.session", null, "Current session. Use frappe.session.user for the logged-in user."),
+  mkApi("frappe.session.user", null, "Id (email) of the logged-in user."),
+  mkApi("frappe.flags", null, "Per-request flags dictionary."),
+  mkApi("frappe.db.sql", "query, values=None, as_dict=False", "Run a SQL query (MariaDB). Use %(name)s or %s placeholders with values. If you pass values, a literal % must be written %%. as_dict=True lets you read row.fieldname.", 'sql("""\n    SELECT $0\n""", as_dict=True)'),
+  mkApi("frappe.db.sql_list", "query, values=None", "Run a query and return the first column as a flat list."),
+  mkApi("frappe.db.get_value", "doctype, filters, fieldname='name', as_dict=False", "One value (or a tuple for several fields) from the first matching record. filters can be a name or a dict."),
+  mkApi("frappe.db.get_single_value", "doctype, fieldname", "Read a field of a Single doctype (settings)."),
+  mkApi("frappe.db.exists", "doctype, filters=None", "Returns the record name if it exists, otherwise None."),
+  mkApi("frappe.db.count", "doctype, filters=None", "Number of records matching the filters."),
+  mkApi("frappe.db.escape", "s", "Quote a value so it is safe to put inside SQL text."),
+  mkApi("frappe.db.set_value", "doctype, name, fieldname, value=None, update_modified=True", "WRITES. Updates the table directly: no validation, no hooks, no GL posting. Avoid on submitted documents."),
+  mkApi("frappe.db.commit", "", "WRITES. Saves every change made in this run."),
+  mkApi("frappe.db.rollback", "", "Undo every uncommitted change made in this run."),
+  mkApi("frappe.get_all", "doctype, filters=None, fields=None, order_by=None, limit_page_length=20, pluck=None", "List records, ignoring user permissions. The default limit is 20, pass limit_page_length=0 for all. filters: dict or [[field, op, value]].", 'get_all("$0", filters={}, fields=["name"], limit_page_length=0)'),
+  mkApi("frappe.get_list", "doctype, filters=None, fields=None, order_by=None, limit_page_length=20", "Like get_all but respects user permissions."),
+  mkApi("frappe.get_doc", "doctype, name=None", "Load a full document (with child tables) by name, or build a new one from a dict."),
+  mkApi("frappe.get_cached_doc", "doctype, name=None", "Like get_doc but may serve a cached copy."),
+  mkApi("frappe.get_last_doc", "doctype, filters=None, order_by='creation desc'", "The most recent document of a doctype."),
+  mkApi("frappe.new_doc", "doctype", "Create an empty draft document in memory (not saved until insert())."),
+  mkApi("frappe.copy_doc", "doc, ignore_no_copy=True", "Copy a document into a new unsaved draft."),
+  mkApi("frappe.get_meta", "doctype", "Doctype metadata: fields, options, links."),
+  mkApi("frappe.delete_doc", "doctype, name, force=0", "WRITES. Permanently deletes a document."),
+  mkApi("frappe.msgprint", "msg, title=None, raise_exception=0, indicator=None", "Show a message dialog to the user."),
+  mkApi("frappe.throw", "msg, exc=None, title=None", "Raise an error and stop the script."),
+  mkApi("frappe.log_error", "message=None, title=None", "Write an entry to the Error Log."),
+  mkApi("frappe.parse_json", "val", "Parse a JSON string. Also accepts a value that is already parsed."),
+  mkApi("frappe.as_json", "obj, indent=1", "Serialize to a JSON string."),
+  mkApi("frappe.enqueue", "method, queue='default', timeout=None, **kwargs", "Run a function in a background worker. Useful for long batches."),
+  mkApi("frappe._dict", "*args, **kwargs", "Dictionary with attribute access: d.key as well as d['key'].", null, "class"),
+  mkApi("frappe.utils.flt", "s, precision=None", "Convert to float. None and '' become 0.0."),
+  mkApi("frappe.utils.cint", "s, default=0", "Convert to int safely."),
+  mkApi("frappe.utils.cstr", "s", "Convert to string, None becomes ''."),
+  mkApi("frappe.utils.getdate", "string_date=None", "Parse a date string into a date object."),
+  mkApi("frappe.utils.nowdate", "", "Today as 'YYYY-MM-DD'."),
+  mkApi("frappe.utils.today", "", "Today as 'YYYY-MM-DD'."),
+  mkApi("frappe.utils.now", "", "Current datetime as a string."),
+  mkApi("frappe.utils.now_datetime", "", "Current datetime object."),
+  mkApi("frappe.utils.add_days", "date, days", "Date shifted by days (negative allowed)."),
+  mkApi("frappe.utils.add_months", "date, months", "Date shifted by months."),
+  mkApi("frappe.utils.date_diff", "end_date, start_date", "Whole days between two dates."),
+  mkApi("frappe.utils.get_first_day", "dt, d_years=0, d_months=0", "First day of the month of dt."),
+  mkApi("frappe.utils.get_last_day", "dt", "Last day of the month of dt."),
+  mkApi("frappe.utils.fmt_money", "amount, precision=None, currency=None", "Format a number as money text.")
+];
+const DOCAPI = [
+  mkApi("doc.insert", "ignore_permissions=None, ignore_mandatory=None", "WRITES. Insert as a new draft record."),
+  mkApi("doc.save", "ignore_permissions=None, ignore_version=None", "WRITES. Save changes to a draft or an allowed-on-submit field."),
+  mkApi("doc.submit", "", "WRITES. Submit the document (docstatus 1). Posts GL entries."),
+  mkApi("doc.cancel", "", "WRITES. Cancel a submitted document (docstatus 2). Reverses GL entries."),
+  mkApi("doc.delete", "", "WRITES. Delete the document."),
+  mkApi("doc.db_set", "fieldname, value=None, update_modified=True, notify=False, commit=False", "WRITES one field straight to the database, skipping validation."),
+  mkApi("doc.reload", "", "Re-read the document from the database."),
+  mkApi("doc.append", "key, value=None", "Add a child row, for example doc.append('accounts', {...})."),
+  mkApi("doc.get", "key, default=None", "Read a field or child table."),
+  mkApi("doc.as_dict", "", "Plain dict copy of the document."),
+  mkApi("doc.name", null, "Document id."),
+  mkApi("doc.docstatus", null, "0 draft, 1 submitted, 2 cancelled."),
+  mkApi("doc.doctype", null, "Doctype name."),
+  mkApi("doc.flags", null, "Flags such as doc.flags.ignore_permissions = True.")
+];
+const PYKW = new Set("and as assert break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield None True False".split(" "));
+const PYBI = new Set("log len range sum min max abs round sorted set dict list tuple str int float bool enumerate zip any all isinstance type reversed map filter".split(" "));
+const SQLKW = new Set("select from where join left right inner outer on as and or not in is null like between group by order having limit offset distinct union all case when then else end asc desc exists count sum avg min max ifnull coalesce concat date_format curdate year month update set delete insert into values".split(" "));
+const SQLRESERVED = new Set("where join left right inner outer on group order having limit union set values select and or".split(" "));
+const SQLWORDS = ["SELECT", "FROM", "WHERE", "AND", "OR", "NOT", "IN", "IS NULL", "IS NOT NULL", "LIKE", "BETWEEN", "JOIN", "LEFT JOIN", "INNER JOIN", "ON", "GROUP BY", "ORDER BY", "HAVING", "LIMIT", "DISTINCT", "AS", "ASC", "DESC", "UNION ALL", "CASE WHEN", "COUNT(", "SUM(", "AVG(", "MIN(", "MAX(", "IFNULL(", "COALESCE(", "CONCAT(", "DATE_FORMAT(", "CURDATE()"];
+const SNIPPETS = [
+  { label: "detect", doc: "Read-only check: join invoices with their adjustment journal entries and print the mismatches.", body: [
+    'rows = frappe.db.sql("""',
+    '    SELECT si.name AS invoice, si.grand_total,',
+    '           si.adjustment_journal_entry AS je, je.total_debit',
+    '    FROM `tabSales Invoice` si',
+    '    JOIN `tabJournal Entry` je ON je.name = si.adjustment_journal_entry',
+    '    WHERE si.docstatus = 1 AND je.docstatus = 1',
+    '""", as_dict=True)',
+    '',
+    'bad = [r for r in rows if abs(frappe.utils.flt(r.grand_total) - frappe.utils.flt(r.total_debit)) > 0.01]',
+    'log(str(len(rows)) + " checked, " + str(len(bad)) + " with discrepancy")',
+    'for r in bad:',
+    '    log(str(r.invoice) + " | " + str(r.je) + " | " + str(r.grand_total) + " | " + str(r.total_debit))$0'].join("\n") },
+  { label: "fixloop", doc: "Dry-run loop over a fixed list of ids with per-record try/except and a log.", body: [
+    'DRY_RUN = True  # keep True until the output looks right',
+    'IDS = [$0]',
+    'results = []',
+    'for name in IDS:',
+    '    try:',
+    '        doc = frappe.get_doc("Journal Entry", name)',
+    '        if doc.docstatus != 1:',
+    '            results.append((name, "SKIPPED: not submitted"))',
+    '            continue',
+    '        if DRY_RUN:',
+    '            results.append((name, "WOULD change, current debit " + str(doc.total_debit)))',
+    '            continue',
+    '        # TODO: the real change goes here',
+    '    except Exception as e:',
+    '        results.append((name, "ERROR: " + str(e)))',
+    'for line in results:',
+    '    log(str(line))'].join("\n") },
+  { label: "asjson", doc: "Query and print the rows as JSON, ready for the Output panel.", body: ['rows = frappe.db.sql("""', '    SELECT $0', '    FROM `tab`', '    LIMIT 50', '""", as_dict=True)', 'log(frappe.as_json(rows))'].join("\n") },
+  { label: "sqlq", doc: "A frappe.db.sql query block.", body: ['rows = frappe.db.sql("""', '    SELECT $0', '    FROM `tab`', '""", as_dict=True)'].join("\n") },
+  { label: "getall", doc: "frappe.get_all with no row limit.", body: 'rows = frappe.get_all("$0", filters={}, fields=["name"], limit_page_length=0)' },
+  { label: "lookup", doc: "Build a name -> row lookup once instead of querying per row.", body: 'lookup = {j.name: j for j in frappe.get_all("Journal Entry", fields=["name", "total_debit"], limit_page_length=0)}$0' },
+  { label: "chunks", doc: "Process a long id list in chunks.", body: ['CHUNK = 200', 'ids = [$0]', 'for i in range(0, len(ids), CHUNK):', '    chunk = ids[i:i + CHUNK]', '    log(str(len(chunk)))'].join("\n") },
+  { label: "tryexcept", doc: "try/except that records the error instead of stopping.", body: ['try:', '    $0', 'except Exception as e:', '    log("ERROR: " + str(e))'].join("\n") }
+];
+const KINDCH = { method: "m", prop: "p", module: "M", class: "C", kw: "k", bi: "f", snip: "s", col: "c", tbl: "T", var: "v", alias: "a", field: "c", sql: "q" };
+const DICTM = new Set("get keys values items pop update copy setdefault clear".split(" "));
+
+/* ===================== TOKENS ===================== */
+const TOK = /(#[^\n]*)|("""[\s\S]*?(?:"""|$)|'''[\s\S]*?(?:'''|$))|("(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(\d+(?:\.\d+)?)|([A-Za-z_]\w*)|([\s\S])/g;
+function tokens(text) {
+  const out = []; TOK.lastIndex = 0; let m;
+  while ((m = TOK.exec(text))) {
+    if (m[0] === "") { TOK.lastIndex++; continue; }
+    const t = m[1] !== undefined ? "comment" : m[2] !== undefined ? "tstr" : m[3] !== undefined ? "str" : m[4] !== undefined ? "num" : m[5] !== undefined ? "id" : "op";
+    const v = m[0];
+    let closed = true;
+    if (t === "tstr") closed = v.length >= 6 && v.endsWith(v.slice(0, 3));
+    else if (t === "str") closed = v.length >= 2 && v.endsWith(v[0]) && !v.endsWith("\\" + v[0]);
+    out.push({ t, s: m.index, e: m.index + v.length, v, closed });
+  }
+  return out;
+}
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const SQLTOK = /(`[^`\n]*`?)|(%\(\w+\)s|%s|%%)|('(?:[^'\\]|\\.)*'?)|(\b[A-Za-z_]\w*\b)|([\s\S])/g;
+function hlSql(raw) {
+  const open = raw.slice(0, 3); let body = raw.slice(3), close = "";
+  if (raw.length >= 6 && body.endsWith(open)) { close = open; body = body.slice(0, -3); }
+  let out = "", m; SQLTOK.lastIndex = 0;
+  while ((m = SQLTOK.exec(body))) {
+    const v = esc(m[0]);
+    if (m[1]) out += '<span class="tb">' + v + "</span>";
+    else if (m[2]) out += '<span class="pm">' + v + "</span>";
+    else if (m[3]) out += '<span class="sv">' + v + "</span>";
+    else if (m[4] && SQLKW.has(m[4].toLowerCase())) out += '<span class="sk">' + v + "</span>";
+    else out += v;
+  }
+  return esc(open) + out + esc(close);
+}
+function hl(text, toks) {
+  let html = "";
+  for (let i = 0; i < toks.length; i++) {
+    const k = toks[i], v = esc(k.v);
+    if (k.t === "comment") html += '<span class="c">' + v + "</span>";
+    else if (k.t === "tstr") html += '<span class="s">' + hlSql(k.v) + "</span>";
+    else if (k.t === "str") html += '<span class="s">' + v + "</span>";
+    else if (k.t === "num") html += '<span class="n">' + v + "</span>";
+    else if (k.t === "id") {
+      const prev = toks[i - 1], next = toks[i + 1];
+      const afterDot = prev && prev.t === "op" && prev.v === ".";
+      let cls = "";
+      if (!afterDot && PYKW.has(k.v)) cls = (k.v === "None" || k.v === "True" || k.v === "False") ? "n" : "k";
+      else if (!afterDot && k.v === "frappe") cls = "fr";
+      else if (!afterDot && PYBI.has(k.v)) cls = "b";
+      else if (next && next.t === "op" && next.v === "(") cls = "f";
+      else if (afterDot) cls = "a";
+      html += cls ? '<span class="' + cls + '">' + v + "</span>" : v;
+    } else html += v;
+  }
+  return html;
+}
+function ctxAt(toks, pos) {
+  for (const k of toks) {
+    if (k.s >= pos) break;
+    if (k.t === "comment" && pos <= k.e) return { t: "comment", tok: k };
+    if (k.t === "tstr" && k.s + 3 <= pos && pos <= (k.closed ? k.e - 3 : k.e)) return { t: "tstr", tok: k, closed: k.closed };
+    if (k.t === "str" && pos < k.e + (k.closed ? 0 : 1) && pos > k.s) return { t: "str", tok: k };
+  }
+  return null;
+}
+function blank(text, toks) {
+  let out = "", last = 0;
+  for (const k of toks) if (k.t === "str" || k.t === "tstr" || k.t === "comment") { out += text.slice(last, k.s) + k.v.replace(/[^\n]/g, " "); last = k.e; }
+  return out + text.slice(last);
+}
+const lineOf = (text, i) => text.slice(0, i).split("\n").length;
+function balanced(t, i) {
+  let d = 0;
+  for (let j = i; j < t.length; j++) { const c = t[j]; if ("([{".includes(c)) d++; else if (")]}".includes(c)) { d--; if (d === 0) return t.slice(i + 1, j); } }
+  return t.slice(i + 1);
+}
+
+/* ===================== ANALYSIS ===================== */
+function parseTables(sql) {
+  const res = [], re = /\b(?:FROM|JOIN|UPDATE|INTO)\s+`tab([^`]+)`(?:\s+(?:AS\s+)?(\w+))?/gi; let m;
+  while ((m = re.exec(sql))) { let a = m[2]; if (a && SQLRESERVED.has(a.toLowerCase())) a = null; res.push({ table: m[1], alias: a || null }); }
+  return res;
+}
+function selectFields(sql, schema) {
+  const m = sql.match(/\bselect\b([\s\S]*?)\bfrom\b/i); if (!m) return [];
+  const tbl = parseTables(sql), out = [], parts = []; let depth = 0, cur = "";
+  for (const ch of m[1]) { if (ch === "(") depth++; if (ch === ")") depth--; if (ch === "," && depth === 0) { parts.push(cur); cur = ""; } else cur += ch; }
+  parts.push(cur);
+  for (let p of parts) {
+    p = p.trim(); if (!p) continue;
+    const a = p.match(/\bas\s+`?(\w+)`?\s*$/i); if (a) { out.push(a[1]); continue; }
+    const star = p.match(/^(?:(\w+)\.)?\*$/);
+    if (star) { for (const t of tbl) if (!star[1] || t.alias === star[1]) ((schema[t.table] || {}).cols || []).forEach(c => out.push(c)); continue; }
+    const last = p.match(/(\w+)`?\s*$/); if (last) out.push(last[1]);
+  }
+  return [...new Set(out)];
+}
+function analyze(text, schema) {
+  const docVars = new Set(), rows = {}; let m;
+  const re1 = /(\w+)\s*=\s*frappe\.(?:get_doc|new_doc|copy_doc|get_cached_doc|get_last_doc)\(/g;
+  while ((m = re1.exec(text))) docVars.add(m[1]);
+  const re2 = /(\w+)\s*=\s*frappe\.db\.sql\(\s*("""|''')([\s\S]*?)\2/g;
+  while ((m = re2.exec(text))) rows[m[1]] = selectFields(m[3], schema);
+  const re3 = /(\w+)\s*=\s*frappe\.get_(?:all|list)\(/g;
+  while ((m = re3.exec(text))) {
+    const inner = balanced(text, m.index + m[0].length - 1), f = inner.match(/fields\s*=\s*\[([^\]]*)\]/);
+    rows[m[1]] = f ? [...f[1].matchAll(/["']([^"']+)["']/g)].map(x => x[1]) : ["name"];
+  }
+  for (let k = 0; k < 4; k++) {
+    const re = /for\s+(\w+)\s+in\s+(\w+)\b/g;
+    while ((m = re.exec(text))) if (rows[m[2]] && !rows[m[1]]) rows[m[1]] = rows[m[2]];
+    const re4 = /for\s+\w+\s*,\s*(\w+)\s+in\s+enumerate\(\s*(\w+)\s*\)/g;
+    while ((m = re4.exec(text))) if (rows[m[2]] && !rows[m[1]]) rows[m[1]] = rows[m[2]];
+    const re5 = /(\w+)\s*=\s*\[\s*(\w+)\s+for\s+\2\s+in\s+(\w+)/g;
+    while ((m = re5.exec(text))) if (rows[m[3]] && !rows[m[1]]) rows[m[1]] = rows[m[3]];
+  }
+  return { docVars, rows };
+}
+function callAt(text, caret, toks) {
+  const stack = []; let ti = 0;
+  for (let i = 0; i < caret; i++) {
+    while (ti < toks.length && toks[ti].e <= i) ti++;
+    const k = toks[ti];
+    if (k && k.s <= i && i < k.e && (k.t === "str" || k.t === "tstr" || k.t === "comment")) { i = Math.min(k.e, caret) - 1; continue; }
+    const ch = text[i];
+    if ("([{".includes(ch)) stack.push({ ch, pos: i, commas: 0 });
+    else if (")]}".includes(ch)) stack.pop();
+    else if (ch === "," && stack.length) stack[stack.length - 1].commas++;
+  }
+  for (let j = stack.length - 1; j >= 0; j--) if (stack[j].ch === "(") {
+    const m = text.slice(0, stack[j].pos).match(/([A-Za-z_][\w.]*)\s*$/);
+    return m ? { name: m[1], arg: stack[j].commas } : null;
+  }
+  return null;
+}
+function resolveApi(name, an) {
+  let e = API.find(x => x.n === name); if (e) return e;
+  const parts = name.split(".");
+  if (parts.length === 1) return API.find(x => x.n === "frappe.utils." + name) || null;
+  if (an && an.docVars.has(parts[0]) && parts.length === 2) return DOCAPI.find(x => x.n === "doc." + parts[1]) || null;
+  return null;
+}
+const sig = e => e.n + (e.params ? "(" + e.params.join(", ") + ")" : "");
+
+/* ===================== COMPLETIONS ===================== */
+const subseq = (s, q) => { let i = 0; for (const c of s) if (c === q[i]) i++; return i === q.length; };
+function rank(items, q) {
+  if (!q) return items.slice(0, 40);
+  const ql = q.toLowerCase(), out = [];
+  for (const it of items) {
+    const l = it.label.toLowerCase(); let s = -1;
+    if (l.startsWith(ql)) s = 0; else if (l.includes(ql)) s = 1; else if (subseq(l, ql)) s = 2;
+    if (s >= 0) out.push([s, it]);
+  }
+  out.sort((a, b) => a[0] - b[0] || a[1].label.length - b[1].label.length);
+  const r = out.map(x => x[1]).slice(0, 40);
+  return (r.length === 1 && r[0].label === q) ? [] : r;
+}
+function apiItem(e) {
+  const label = e.n.split(".").pop();
+  const ins = e.ins || (e.kind === "method" || e.kind === "class" ? label + "($0)" : label);
+  return { label, insert: ins, kind: e.kind, detail: e.params ? "(" + e.params.join(", ") + ")" : e.kind, doc: e.doc, sig: sig(e) };
+}
+function membersOf(chain, an) {
+  const direct = API.filter(e => e.n.startsWith(chain + ".") && !e.n.slice(chain.length + 1).includes("."));
+  if (direct.length) return direct.map(apiItem);
+  if (an.docVars.has(chain)) return DOCAPI.map(e => { const it = apiItem(e); it.label = e.n.slice(4); if (e.ins === undefined && (e.kind === "method")) it.insert = it.label + "($0)"; else if (e.kind === "prop") it.insert = it.label; return it; });
+  if (an.rows[chain]) return an.rows[chain].map(f => ({ label: f, insert: f, kind: "field", detail: "field of " + chain, doc: "Selected column in the query that produced " + chain + "." }));
+  return [];
+}
+function pyCompletions(before, text, an, forced) {
+  const m = before.match(/([A-Za-z_]\w*(?:\.\w+)*)\.(\w*)$/);
+  if (m) {
+    const items = rank(membersOf(m[1], an), m[2]);
+    return items.length ? { items, start: before.length - m[2].length } : null;
+  }
+  const w = (before.match(/[A-Za-z_]\w*$/) || [""])[0];
+  if (!w && !forced) return null;
+  const items = [];
+  items.push({ label: "frappe", insert: "frappe", kind: "module", detail: "module", doc: "The Frappe framework object. Always available in the console." });
+  SNIPPETS.forEach(s => items.push({ label: s.label, insert: s.body, kind: "snip", detail: "snippet", doc: s.doc }));
+  PYKW.forEach(k => items.push({ label: k, insert: k, kind: "kw", detail: "keyword" }));
+  PYBI.forEach(k => items.push(k === "log" ? { label: "log", insert: "log($0)", kind: "bi", detail: "console output", doc: "Prints to the Output panel. print() does not work in the System Console. Takes ONE value.", sig: "log(text)" } : { label: k, insert: k + "($0)", kind: "bi", detail: "builtin" }));
+  const seen = new Set(), vre = /(?:^|\n)[ \t]*(\w+)\s*=[^=]|for\s+(\w+)\s+in\b|def\s+(\w+)/g; let vm;
+  while ((vm = vre.exec(text))) { const n = vm[1] || vm[2] || vm[3]; if (n && n !== w && !seen.has(n) && !PYKW.has(n)) { seen.add(n); items.push({ label: n, insert: n, kind: "var", detail: "variable" }); } }
+  const r = rank(items, w);
+  return r.length ? { items: r, start: before.length - w.length } : null;
+}
+function sqlCompletions(before, full, schema, forced, nextChar) {
+  const tbls = Object.keys(schema);
+  const bt = ((before.split("\n").pop().match(/`/g) || []).length % 2 === 1) ? before.match(/`([^`\n]*)$/) : null;
+  if (bt) {
+    const items = rank(tbls.map(t => ({ label: "tab" + t, insert: "tab" + t + (nextChar === "`" ? "" : "`"), kind: "tbl", detail: "table", doc: schema[t].cols.length + " columns" })), bt[1]);
+    return items.length ? { items, start: before.length - bt[1].length } : null;
+  }
+  const parsed = parseTables(full);
+  const dm = before.match(/\b([A-Za-z_]\w*)\.(\w*)$/);
+  if (dm) {
+    const t = parsed.find(p => p.alias === dm[1]);
+    if (!t || !schema[t.table]) return null;
+    const items = rank(schema[t.table].cols.map(c => ({ label: c, insert: c, kind: "col", detail: t.table, doc: "Column of `tab" + t.table + "`." })), dm[2]);
+    return items.length ? { items, start: before.length - dm[2].length } : null;
+  }
+  const fm = before.match(/\b(?:FROM|JOIN|UPDATE|INTO)\s+(\w*)$/i);
+  if (fm) {
+    const items = rank(tbls.map(t => ({ label: "tab" + t, insert: "`tab" + t + "`", kind: "tbl", detail: "table", doc: schema[t].cols.length + " columns" })), fm[1]);
+    return items.length ? { items, start: before.length - fm[1].length } : null;
+  }
+  const w = (before.match(/[A-Za-z_%(]\w*$/) || [""])[0];
+  if (!w && !forced) return null;
+  const items = [], seen = new Set();
+  parsed.forEach(p => { if (p.alias) items.push({ label: p.alias, insert: p.alias, kind: "alias", detail: p.table }); });
+  parsed.forEach(p => ((schema[p.table] || {}).cols || []).forEach(c => { if (!seen.has(c)) { seen.add(c); items.push({ label: c, insert: c, kind: "col", detail: p.table }); } }));
+  items.push({ label: "%(name)s", insert: "%($0)s", kind: "sql", detail: "named value", doc: "Named placeholder. Pass a dict as the second argument of frappe.db.sql." });
+  SQLWORDS.forEach(k => items.push({ label: k, insert: k.endsWith("(") ? k + "$0)" : k, kind: "sql", detail: "SQL" }));
+  const r = rank(items, w);
+  return r.length ? { items: r, start: before.length - w.length } : null;
+}
+
+/* ===================== CHECKS ===================== */
+const UTIL_NAMES = "flt cint cstr getdate nowdate today now_datetime add_days add_months date_diff get_first_day get_last_day fmt_money".split(" ");
+function runChecks(text, toks, schema, an) {
+  const out = [], add = (line, level, msg) => out.push({ line, level, msg });
+  const code = blank(text, toks);
+  const st = [], pairs = { ")": "(", "]": "[", "}": "{" };
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i];
+    if ("([{".includes(c)) st.push({ c, i });
+    else if (")]}".includes(c)) { const t = st.pop(); if (!t || t.c !== pairs[c]) add(lineOf(text, i), "error", "Unmatched '" + c + "'"); }
+  }
+  st.forEach(t => add(lineOf(text, t.i), "error", "'" + t.c + "' is never closed"));
+  toks.forEach(k => { if (k.t === "tstr" && !k.closed) add(lineOf(text, k.s), "error", "Triple-quoted string is never closed"); });
+  if (/^\t/m.test(text) && /^ +\S/m.test(text)) add(lineOf(text, text.search(/^\t/m)), "warn", "Tabs and spaces are mixed. Python will raise an indentation error.");
+  let m;
+  const imp = /^[ \t]*(?:from\s+\S+\s+import|import)\s+\S.*$/gm;
+  while ((m = imp.exec(code))) add(lineOf(text, m.index), "warn", "Imports may be blocked in the System Console sandbox (v13). Prefer frappe.utils.flt(...) style calls.");
+  const imported = new Set((code.match(/^[ \t]*from\s+\S+\s+import\s+.*$/gm) || []).join(" ").split(/[\s,()]+/));
+  UTIL_NAMES.forEach(n => {
+    if (imported.has(n)) return;
+    const re = new RegExp("(^|[^.\\w])" + n + "\\s*\\(", "gm");
+    while ((m = re.exec(code))) add(lineOf(text, m.index + m[1].length), "warn", "'" + n + "' is not defined in the console. Use frappe.utils." + n + "(...).");
+  });
+  const pr1 = /(^|[^.\w])print\s*\(/gm;
+  while ((m = pr1.exec(code))) add(lineOf(text, m.index + m[1].length), "error", "print() fails in the System Console (NameError: _print_). Use log(text).");
+  const lg = /(^|[^.\w])log\s*\(/gm;
+  while ((m = lg.exec(code))) {
+    const inner = balanced(code, m.index + m[0].length - 1); let d = 0, multi = false;
+    for (const ch of inner) { if ("([{".includes(ch)) d++; else if (")]}".includes(ch)) d--; else if (ch === "," && d === 0) { multi = true; break; } }
+    if (multi) add(lineOf(text, m.index + m[1].length), "warn", "log() takes one value. Join them: log(str(a) + \" \" + str(b)).");
+  }
+  readOnlyScan(text).forEach(h => add(h.line, "warn", "Run blocks this (read-only): " + h.what));
+  toks.forEach(k => {
+    if (k.t !== "tstr" && k.t !== "str") return;
+    const content = k.t === "tstr" ? k.v.slice(3, k.closed ? -3 : undefined) : k.v.slice(1, k.closed ? -1 : undefined);
+    if (!/^\s*(select|update|delete|insert|with)\b/i.test(content)) return;
+    const base = lineOf(text, k.s), at = off => base + content.slice(0, off).split("\n").length - 1;
+    let w = content.search(/\b(update|delete\s+from|insert\s+into)\b/i);
+    if (w >= 0) add(at(w), "warn", "Raw SQL write. It skips validations and GL posting, and the restricted console usually rejects non-SELECT queries.");
+    if (/^\s*,\s*(?!\w+\s*=)\S/.test(text.slice(k.e))) {
+      const pr = /%%|%\(\w+\)s|%s|%/g; let pm;
+      while ((pm = pr.exec(content))) if (pm[0] === "%") { add(at(pm.index), "warn", "A literal % must be written %% when values are passed to frappe.db.sql."); break; }
+    }
+    w = content.search(/\b(from|join|update|into)\s+tab[A-Za-z]/i);
+    if (w >= 0) add(at(w), "warn", "Wrap table names in backticks: `tabSales Invoice`.");
+    const tr = /`tab([^`]+)`/g; let tm;
+    while ((tm = tr.exec(content))) if (!schema[tm[1]]) add(at(tm.index), "info", "Table '" + tm[1] + "' is not in the schema list. Add it under Schema.");
+    const parsed = parseTables(content), s2 = content.replace(/'[^']*'/g, x => " ".repeat(x.length)), cr = /\b([A-Za-z_]\w*)\.(\w+)\b/g; let cm;
+    while ((cm = cr.exec(s2))) {
+      const t = parsed.find(p => p.alias === cm[1]);
+      if (t && schema[t.table] && !schema[t.table].cols.includes(cm[2])) add(at(cm.index), "info", "'" + cm[2] + "' is not in the " + t.table + " schema (the list may be incomplete).");
+    }
+  });
+  const ar = /\b([A-Za-z_]\w*)\.([A-Za-z_]\w*)\b/g;
+  while ((m = ar.exec(code))) {
+    const f = an.rows[m[1]];
+    if (f && f.length && !f.includes(m[2]) && !DICTM.has(m[2]) && m[1] !== "frappe") add(lineOf(text, m.index), "info", m[1] + "." + m[2] + " is not a column in the query. It would be None at runtime.");
+  }
+  const seen = new Set();
+  return out.filter(d => { const k = d.line + d.msg; if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => a.line - b.line);
+}
+
+/* ===================== CHEATSHEET ===================== */
+const CHEATS = [
+  { g: "Get data", t: "Get one document by id", d: "Full document, including child tables.", c: 'doc = frappe.get_doc("DOCTYPE", "DOCNAME")\nlog(str(doc.FIELDNAME))' },
+  { g: "Get data", t: "Get one field of an id", d: "Fastest way to read a single value.", c: 'value = frappe.db.get_value("DOCTYPE", "DOCNAME", "FIELDNAME")\nlog(str(value))' },
+  { g: "Get data", t: "Get several fields of an id", d: "Returns a dict-like row.", c: 'row = frappe.db.get_value("DOCTYPE", "DOCNAME", ["FIELD1", "FIELD2"], as_dict=True)\nlog(str(row.FIELD1) + " " + str(row.FIELD2))' },
+  { g: "Get data", t: "Get a list with a simple filter", d: "limit_page_length=0 means no limit (default is 20).", c: 'rows = frappe.get_all("DOCTYPE",\n    filters={"FIELDNAME": "VALUE"},\n    fields=["name", "FIELDNAME"],\n    limit_page_length=0)' },
+  { g: "Get data", t: "Filter with operators", d: "[field, operator, value]. Operators: =, !=, >, <, >=, <=, like, in, not in, between.", c: 'rows = frappe.get_all("DOCTYPE",\n    filters=[["FIELDNAME", ">=", "VALUE"], ["STATUSFIELD", "in", ["A", "B"]]],\n    fields=["name"],\n    limit_page_length=0)' },
+  { g: "Get data", t: "Check if an id exists", d: "Returns the name if found, otherwise None.", c: 'if frappe.db.exists("DOCTYPE", "DOCNAME"):\n    log("found")\nelse:\n    log("missing")' },
+  { g: "Get data", t: "Count records", d: "", c: 'n = frappe.db.count("DOCTYPE", {"FIELDNAME": "VALUE"})\nlog(str(n))' },
+  { g: "Get data", t: "Read child table rows", d: "Child tables are lists on the document.", c: 'doc = frappe.get_doc("DOCTYPE", "DOCNAME")\nfor row in doc.CHILDTABLE:\n    log(row.FIELDNAME)' },
+  { g: "Get data", t: "Run a SQL query", d: "Use %(name)s placeholders and pass values as a dict.", c: 'rows = frappe.db.sql("""\n    SELECT name, FIELDNAME\n    FROM `tabDOCTYPE`\n    WHERE FIELDNAME = %(value)s\n""", {"value": "VALUE"}, as_dict=True)' },
+  { g: "Set data", w: 1, t: "Set one field directly", d: "Skips validation and hooks. Avoid on submitted documents.", c: 'frappe.db.set_value("DOCTYPE", "DOCNAME", "FIELDNAME", "VALUE")' },
+  { g: "Set data", w: 1, t: "Change a field and save", d: "Runs validation. Works on drafts.", c: 'doc = frappe.get_doc("DOCTYPE", "DOCNAME")\ndoc.FIELDNAME = "VALUE"\ndoc.save()' },
+  { g: "Set data", w: 1, t: "Create a new document", d: "Inserted as a draft until you submit it.", c: 'doc = frappe.get_doc({\n    "doctype": "DOCTYPE",\n    "FIELDNAME": "VALUE",\n})\ndoc.insert()' },
+  { g: "Set data", w: 1, t: "Add a child row", d: "", c: 'doc = frappe.get_doc("DOCTYPE", "DOCNAME")\ndoc.append("CHILDTABLE", {\n    "FIELDNAME": "VALUE",\n})\ndoc.save()' },
+  { g: "Set data", w: 1, t: "Submit / cancel", d: "Submit posts GL entries, cancel reverses them.", c: 'doc = frappe.get_doc("DOCTYPE", "DOCNAME")\ndoc.submit()   # or doc.cancel()' },
+  { g: "Set data", w: 1, t: "Save the changes", d: "The console has a Commit checkbox too. Leave it off for test runs.", c: 'frappe.db.commit()' },
+  { g: "Python basics", t: "Variables and output", d: "", c: 'name = "VALUE"\ntotal = 100\nlog(name + " " + str(total))\nlog("Total is " + str(total))' },
+  { g: "Python basics", t: "List (array)", d: "", c: 'ids = ["ID1", "ID2"]\nids.append("ID3")\nlog(str(len(ids)) + " " + ids[0])' },
+  { g: "Python basics", t: "Dict (object)", d: "Use .get() so a missing key does not raise an error.", c: 'item = {"name": "VALUE", "total": 100}\nitem["status"] = "VALUE"\nlog(str(item.get("KEY", 0)))' },
+  { g: "Python basics", t: "Loop", d: "Indentation (4 spaces) matters.", c: 'for row in rows:\n    log(row.name)' },
+  { g: "Python basics", t: "If / else", d: "", c: 'if row.FIELDNAME == "VALUE":\n    log("match")\nelif row.FIELDNAME is None:\n    log("empty")\nelse:\n    log("other")' },
+  { g: "Python basics", t: "Filter a list", d: "Same idea as array.filter in JavaScript.", c: 'matches = [r for r in rows if r.FIELDNAME > 0]' },
+  { g: "Python basics", t: "Pick one field from every row", d: "Same idea as array.map.", c: 'values = [r.FIELDNAME for r in rows]' },
+  { g: "Python basics", t: "Lookup by key", d: "Build once, then read in O(1) instead of searching.", c: 'lookup = {r.name: r for r in rows}\nlog(str(lookup.get("DOCNAME")))' },
+  { g: "Python basics", t: "Safe number math", d: "flt turns None and empty text into 0.0.", c: 'diff = abs(frappe.utils.flt(a) - frappe.utils.flt(b))' },
+  { g: "Python basics", t: "Try / except", d: "Keep going when one record fails.", c: 'try:\n    # code here\n    pass\nexcept Exception as e:\n    log("ERROR: " + str(e))' }
+];
+
+/* ===================== JSON / PYTHON-REPR PRETTIFIER ===================== */
+function parseAll(src) {
+  let i = 0; const s = src;
+  const ws = () => { while (i < s.length && /\s/.test(s[i])) i++; };
+  const fail = m => { throw new Error(m + " (position " + i + ": " + JSON.stringify(s.slice(Math.max(0, i - 12), i + 12)) + ")"); };
+  function str() {
+    const q = s[i++]; let out = ""; const map = { n: "\n", t: "\t", r: "\r", "\\": "\\", "'": "'", '"': '"' };
+    while (i < s.length && s[i] !== q) {
+      if (s[i] === "\\") {
+        const n = s[i + 1];
+        if (n === "u" && /^[0-9a-fA-F]{4}$/.test(s.slice(i + 2, i + 6))) { out += String.fromCharCode(parseInt(s.slice(i + 2, i + 6), 16)); i += 6; continue; }
+        out += map[n] !== undefined ? map[n] : n; i += 2;
+      } else out += s[i++];
+    }
+    if (i >= s.length) fail("Unterminated string");
+    i++; return out;
+  }
+  function num() {
+    const m = s.slice(i).match(/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?/);
+    if (!m) fail("Bad number"); i += m[0].length; return parseFloat(m[0]);
+  }
+  const pad2 = n => String(n).padStart(2, "0");
+  function ident() {
+    const name = s.slice(i).match(/^[A-Za-z_][\w.]*/)[0]; i += name.length;
+    ws();
+    if (s[i] !== "(") {
+      if (name === "None" || name === "null") return null;
+      if (name === "True" || name === "true") return true;
+      if (name === "False" || name === "false") return false;
+      return name;
+    }
+    i++; const args = [], kw = {};
+    ws();
+    while (i < s.length && s[i] !== ")") {
+      const km = s.slice(i).match(/^([A-Za-z_]\w*)\s*=(?!=)/);
+      if (km) { i += km[0].length; kw[km[1]] = value(); } else args.push(value());
+      ws(); if (s[i] === ",") { i++; ws(); }
+    }
+    if (s[i] !== ")") fail("Expected )"); i++;
+    const base = name.split(".").pop();
+    if (base === "date" && args.length === 3) return args[0] + "-" + pad2(args[1]) + "-" + pad2(args[2]);
+    if (base === "datetime" && args.length >= 3) return args[0] + "-" + pad2(args[1]) + "-" + pad2(args[2]) + (args.length >= 4 ? " " + pad2(args[3]) + ":" + pad2(args[4] || 0) + ":" + pad2(args[5] || 0) : "");
+    if (base === "time" && args.length >= 1) return pad2(args[0]) + ":" + pad2(args[1] || 0) + ":" + pad2(args[2] || 0);
+    if (base === "Decimal" && args.length === 1) { const n = Number(args[0]); return isNaN(n) ? String(args[0]) : n; }
+    if (base === "_dict" || base === "dict") return Object.assign({}, args[0] && typeof args[0] === "object" ? args[0] : {}, kw);
+    return name + "(" + args.map(a => JSON.stringify(a)).concat(Object.keys(kw).map(k => k + "=" + JSON.stringify(kw[k]))).join(", ") + ")";
+  }
+  function arr(close) {
+    i++; const out = []; ws();
+    if (s[i] === close) { i++; return out; }
+    for (;;) {
+      out.push(value()); ws();
+      if (s[i] === ",") { i++; ws(); if (s[i] === close) { i++; return out; } continue; }
+      if (s[i] === close) { i++; return out; }
+      fail("Expected , or " + close);
+    }
+  }
+  function obj() {
+    i++; ws();
+    if (s[i] === "}") { i++; return {}; }
+    let k = value(); ws();
+    if (s[i] !== ":") {
+      const a = [k];
+      for (;;) { ws(); if (s[i] === ",") { i++; ws(); if (s[i] === "}") break; a.push(value()); } else break; }
+      ws(); if (s[i] !== "}") fail("Expected }"); i++; return a;
+    }
+    const o = {};
+    for (;;) {
+      ws(); if (s[i] !== ":") fail("Expected :"); i++;
+      o[String(k)] = value(); ws();
+      if (s[i] === ",") { i++; ws(); if (s[i] === "}") { i++; return o; } k = value(); continue; }
+      if (s[i] === "}") { i++; return o; }
+      fail("Expected , or }");
+    }
+  }
+  function value() {
+    ws(); const c = s[i];
+    if (c === undefined) fail("Unexpected end");
+    if (c === "{") return obj();
+    if (c === "[") return arr("]");
+    if (c === "(") return arr(")");
+    if (c === '"' || c === "'") return str();
+    if (/[-+\d.]/.test(c)) return num();
+    if (/[A-Za-z_]/.test(c)) return ident();
+    fail("Unexpected '" + c + "'");
+  }
+  const out = [];
+  for (;;) { ws(); if (i >= s.length) break; out.push(value()); ws(); if (s[i] === ",") i++; }
+  return out;
+}
+function prettyJson(v, ind, width) {
+  ind = ind || ""; width = width || 78;
+  const prim = x => x === null || typeof x !== "object";
+  if (prim(v)) return JSON.stringify(v);
+  const inner = ind + "  ";
+  if (Array.isArray(v)) {
+    if (!v.length) return "[]";
+    const flat = "[" + v.map(x => prettyJson(x, "", width)).join(", ") + "]";
+    if (v.every(prim) && ind.length + flat.length <= width) return flat;
+    return "[\n" + v.map(x => inner + prettyJson(x, inner, width)).join(",\n") + "\n" + ind + "]";
+  }
+  const keys = Object.keys(v);
+  if (!keys.length) return "{}";
+  const flat = "{" + keys.map(k => JSON.stringify(k) + ": " + prettyJson(v[k], "", width)).join(", ") + "}";
+  if (keys.every(k => prim(v[k])) && ind.length + flat.length <= 60) return flat;
+  return "{\n" + keys.map(k => inner + JSON.stringify(k) + ": " + prettyJson(v[k], inner, width)).join(",\n") + "\n" + ind + "}";
+}
+function toTable(v) {
+  const rows = Array.isArray(v) ? v : [v];
+  if (!rows.length || !rows.every(r => r && typeof r === "object" && !Array.isArray(r))) return prettyJson(v);
+  const cols = []; rows.forEach(r => Object.keys(r).forEach(k => { if (!cols.includes(k)) cols.push(k); }));
+  const cell = x => x === null || x === undefined ? "None" : typeof x === "object" ? JSON.stringify(x) : String(x);
+  const w = cols.map(c => Math.max(c.length, ...rows.map(r => cell(r[c]).length)));
+  const line = a => a.map((x, i) => x.padEnd(w[i])).join(" | ").trimEnd();
+  return [line(cols), w.map(n => "-".repeat(n)).join("-+-")].concat(rows.map(r => line(cols.map(c => cell(r[c]))))).join("\n");
+}
+// returns null when the text is not an object/list, {error} on a parse failure, {text} on success
+function formatLoose(text, mode) {
+  const t = text.trim();
+  if (!t || (!/^[\[{(]/.test(t) && !/^[A-Za-z_][\w.]*\s*\(/.test(t))) return null;
+  let vals;
+  try { vals = parseAll(t); } catch (e) { return { error: e.message }; }
+  if (!vals.length || vals.some(v => v === null || typeof v !== "object")) return null;
+  const f = mode === "compact" ? v => JSON.stringify(v) : mode === "table" ? toTable : v => prettyJson(v);
+  return { text: vals.map(f).join("\n\n"), count: vals.length };
+}
+
+/* ===================== RUN: READ-ONLY GUARD ===================== */
+// Allowlist, not a blocklist: anything not listed here is refused before the script is sent.
+const RO_FRAPPE = new Set(("frappe.db.sql frappe.db.sql_list frappe.db.get_value frappe.db.get_values frappe.db.get_single_value frappe.db.exists frappe.db.count frappe.db.escape " +
+  "frappe.get_all frappe.get_list frappe.get_doc frappe.get_cached_doc frappe.get_last_doc frappe.get_meta frappe.get_cached_value frappe.utils " +
+  "frappe.as_json frappe.parse_json frappe._dict frappe._ frappe.session.user frappe.format frappe.format_value frappe.date_format").split(" "));
+const RO_METHODS = new Set(("get keys values items append extend pop insert index count sort reverse copy update setdefault remove clear add discard " +
+  "union intersection difference issubset issuperset join split rsplit splitlines partition strip lstrip rstrip lower upper title capitalize " +
+  "replace startswith endswith format find rfind zfill ljust rjust center isdigit isalpha isalnum isspace encode decode " +
+  "as_dict as_json get_formatted strftime isoformat date time weekday total_seconds quantize").split(" "));
+const RO_BAD = new Set("getattr setattr delattr exec eval compile open __import__ globals locals vars input breakpoint".split(" "));
+// method names that write; referencing them without calling (f = doc.save) is refused too
+const RO_WRITE_ATTR = new Set("save submit cancel insert delete db_set db_insert db_update run_method commit set_value set_single_value rename sql_ddl truncate".split(" "));
+const RO_SQL_START = /^\(?\s*(select|with)\b/i;
+const RO_SQL_BAD = /\bfor\s+update\b|\block\s+in\s+share\s+mode\b|\binto\s+(?:outfile|dumpfile|@)|\b(?:insert|replace)\s+(?:(?:low_priority|delayed|high_priority|ignore)\s+)*into\b|\bupdate\s+[`\w][\s\S]*?\bset\b|\bdelete\s+(?:(?:low_priority|quick|ignore)\s+)*from\b|\b(?:alter|drop|truncate|create|rename|grant|revoke)\s+[`\w]|\bcall\s+\w+\s*\(|\bhandler\s+\w|\bload\s+(?:data|xml)\b|\bset\s+@|\b(?:sleep|benchmark|get_lock)\s*\(/i;
+function readOnlyScan(text) {
+  const toks = tokens(text), code = blank(text, toks), out = [];
+  const add = (k, what) => out.push({ line: lineOf(text, k.s), what });
+  const ct = toks.filter(k => k.t !== "comment" && !(k.t === "op" && /\s/.test(k.v)));
+  const isOp = (k, v) => k && k.t === "op" && k.v === v;
+  for (let i = 0; i < ct.length; i++) {
+    const k = ct[i], prev = ct[i - 1], next = ct[i + 1];
+    if (k.t !== "id") continue;
+    if (k.v.includes("__")) { add(k, "'" + k.v + "' (double-underscore names are not allowed)"); continue; }
+    if (isOp(prev, ".")) {
+      // attribute on something that is not a frappe chain (those are consumed below)
+      if (isOp(next, "(")) {
+        if (k.v === "insert") {
+          // list.insert(i, x) is fine, doc.insert() / doc.insert(ignore_permissions=True) is a write
+          const inner = balanced(code, next.s);
+          let d = 0, comma = false;
+          for (const ch of inner) { if ("([{".includes(ch)) d++; else if (")]}".includes(ch)) d--; else if (ch === "," && d === 0) comma = true; }
+          if (!comma || /(^|[^=!<>])=(?!=)/.test(inner)) add(k, ".insert() writes a document");
+        } else if (!RO_METHODS.has(k.v)) add(k, "." + k.v + "() is not on the read-only list");
+      } else if (RO_WRITE_ATTR.has(k.v)) add(k, "." + k.v + " (a write method)");
+      continue;
+    }
+    if (k.v === "import" || (k.v === "from" && ct.slice(i + 1, i + 6).some(x => x.t === "id" && x.v === "import"))) { add(k, "import statements"); continue; }
+    if (RO_BAD.has(k.v)) { add(k, k.v + "() can reach blocked calls"); continue; }
+    if (k.v !== "frappe") continue;
+    // frappe.a.b.c: keep the longest allowed prefix, the rest is checked as normal attributes
+    const parts = ["frappe"]; let j = i;
+    while (isOp(ct[j + 1], ".") && ct[j + 2] && ct[j + 2].t === "id") { parts.push(ct[j + 2].v); j += 2; }
+    let n = 0;
+    for (let p = parts.length; p >= 1; p--) {
+      const name = parts.slice(0, p).join(".");
+      if (RO_FRAPPE.has(name) || (p === 3 && parts[1] === "utils")) { n = p; break; }
+    }
+    if (!n) { add(k, parts.slice(0, Math.min(parts.length, 3)).join(".") + " is not on the read-only list"); i = j; continue; }
+    const name = parts.slice(0, n).join("."), endI = i + (n - 1) * 2, after = ct[endI + 1], after2 = ct[endI + 2];
+    if (isOp(after, "=") && !isOp(after2, "=")) add(k, "assigning to " + name);
+    if ((name === "frappe.db.sql" || name === "frappe.db.sql_list") && isOp(after, "(")) {
+      const q = after2, q2 = ct[endI + 3];
+      if (!q || (q.t !== "str" && q.t !== "tstr") || !(isOp(q2, ",") || isOp(q2, ")"))) add(k, name + "(...) needs the query as one literal string. Pass values with %(name)s placeholders");
+      else {
+        const body = q.t === "tstr" ? q.v.slice(3, q.closed ? -3 : undefined) : q.v.slice(1, q.closed ? -1 : undefined);
+        // blank quoted values and comments without changing offsets, so match positions map back to lines
+        const clean = body.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|--[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\//g, x => x.replace(/[^\n]/g, " "));
+        const bad = clean.match(RO_SQL_BAD), qLine = off => lineOf(text, q.s) + body.slice(0, off).split("\n").length - 1;
+        if (!RO_SQL_START.test(clean.trim())) add(q, "SQL must start with SELECT or WITH");
+        else if (/;\s*\S/.test(clean)) add(q, "only one SQL statement per query");
+        else if (bad) out.push({ line: qLine(bad.index), what: "SQL " + bad[0].trim().split(/\s+/).slice(0, 2).join(" ").toUpperCase() + " (not a read)" });
+      }
+    }
+    i = endI;
+  }
+  const seen = new Set();
+  return out.filter(o => { const key = o.line + o.what; if (seen.has(key)) return false; seen.add(key); return true; }).sort((a, b) => a.line - b.line);
+}
+
+/* ===================== RUN: OUTPUT PARSING ===================== */
+// index just past the bracket that closes s[i], skipping quoted strings; -1 if never closed
+function closeOf(s, i) {
+  let d = 0, q = null;
+  for (let j = i; j < s.length; j++) {
+    const c = s[j];
+    if (q) { if (c === "\\") j++; else if (c === q) q = null; continue; }
+    if (c === '"' || c === "'") q = c;
+    else if ("[{(".includes(c)) d++;
+    else if ("]})".includes(c)) { d--; if (d === 0) return j + 1; }
+  }
+  return -1;
+}
+// splits console output into [{v: value}] for JSON or Python-repr objects and [{t: text}] for everything else
+function parseOut(raw) {
+  const s = raw.replace(/\r/g, ""), out = []; let i = 0, text = "";
+  const flush = () => { if (text.trim()) out.push({ t: text.replace(/\n+$/, "") }); text = ""; };
+  while (i < s.length) {
+    let le = s.indexOf("\n", i); if (le < 0) le = s.length;
+    const line = s.slice(i, le), lead = line.match(/^\s*/)[0].length;
+    if ("[{(".includes(line[lead] || " ")) {
+      const e = closeOf(s, i + lead);
+      if (e > 0) {
+        let n2 = s.indexOf("\n", e); if (n2 < 0) n2 = s.length;
+        if (!s.slice(e, n2).trim()) {
+          let vs = null;
+          try { vs = [JSON.parse(s.slice(i + lead, e))]; } catch (err) { try { vs = parseAll(s.slice(i + lead, e)); } catch (err2) {} }
+          if (vs && vs.length === 1 && vs[0] && typeof vs[0] === "object") { flush(); out.push({ v: vs[0] }); i = n2 + 1; continue; }
+        }
+      }
+    }
+    text += line + "\n"; i = le + 1;
+  }
+  flush(); return out;
+}
+const JTOK = /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+function hlJson(t) {
+  let h = "", last = 0, m; JTOK.lastIndex = 0;
+  while ((m = JTOK.exec(t))) {
+    h += esc(t.slice(last, m.index)); last = JTOK.lastIndex;
+    if (m[1]) h += '<span class="' + (m[2] ? "jk" : "js") + '">' + esc(m[1]) + "</span>" + (m[2] || "");
+    else if (m[3]) h += '<span class="jl">' + m[3] + "</span>";
+    else h += '<span class="jn">' + m[4] + "</span>";
+  }
+  return h + esc(t.slice(last));
+}
+
+/* ===================== RUN: CONNECTION ===================== */
+function normUrl(u) {
+  u = (u || "").trim();
+  if (!u) return { err: "Enter the site URL, for example http://localhost:8000" };
+  if (!/^https?:\/\//i.test(u)) {
+    if (/^[a-z]+:/i.test(u) && !/^[\w.-]+:\d+/.test(u)) return { err: "Use an http:// or https:// address." };
+    u = (/^(localhost|127\.|\[::1\]|[\w-]+\.localhost|[\w.-]+\.test)\b/i.test(u) ? "http://" : "https://") + u;
+  }
+  try { const x = new URL(u); if (!x.hostname) throw 0; return { url: x.origin }; } catch (e) { return { err: "That is not a valid URL." }; }
+}
+// accepts "key", or a pasted "token key:secret" / "Authorization: token key:secret"
+function splitToken(v) {
+  const m = (v || "").match(/^\s*(?:authorization\s*:\s*)?(?:token\s+)?([^\s:]+)\s*:\s*(\S+)\s*$/i);
+  return m ? { key: m[1], secret: m[2] } : null;
+}
+function credErr(v, what) {
+  if (!v) return what === "key" ? "Enter the API key." : "Enter the API secret. Frappe shows it only once, right after Generate Keys.";
+  if (/\s/.test(v)) return "The " + what + " cannot contain spaces.";
+  if (/:/.test(v)) return "Paste the key and the secret in their own fields, without the ':'.";
+  if (!/^[A-Za-z0-9]+$/.test(v)) return "The " + what + " should be letters and digits only.";
+  if (v.length < 10 || v.length > 64) return "That does not look like a Frappe API " + what + " (usually 15 characters, this one has " + v.length + ").";
+  return "";
+}
+
+</script>
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+  const jparse = s => { try { return JSON.parse(s); } catch (e) { return null; } };
+  const ta = $("#ta"), hlEl = $("#hl"), nums = $("#nums"), pop = $("#pop"), codeEl = $("#code");
+  const LH = 22, PX = 14, PY = 10; let CW = 8.1;
+
+  function buildSchema() {
+    const s = JSON.parse(JSON.stringify(SCHEMA0)), custom = jparse(store.get("fcb_schema")) || {};
+    for (const k in custom) s[k] = { cols: custom[k], custom: true };
+    return s;
+  }
+  let schema = buildSchema(), toks = [], an = { docVars: new Set(), rows: {} }, diags = [];
+
+  const DEFAULT = [
+    "# Detect only. This script reads and prints, it never writes.",
+    'rows = frappe.db.sql("""',
+    "    SELECT si.name AS invoice,",
+    "           si.posting_date,",
+    "           si.grand_total,",
+    "           si.adjustment_journal_entry AS je,",
+    "           je.total_debit",
+    "    FROM `tabSales Invoice` si",
+    "    JOIN `tabJournal Entry` je ON je.name = si.adjustment_journal_entry",
+    "    WHERE si.docstatus = 1",
+    "      AND je.docstatus = 1",
+    "      AND si.name LIKE %(prefix)s",
+    "      AND si.posting_date <= %(date)s",
+    '""", {"prefix": "SOA-%", "date": "2026-05-01"}, as_dict=True)',
+    "",
+    '# PLACEHOLDER RULE: replace with your real definition of "wrong"',
+    "bad = [r for r in rows if abs(frappe.utils.flt(r.grand_total) - frappe.utils.flt(r.total_debit)) > 0.01]",
+    "",
+    'log(str(len(rows)) + " checked, " + str(len(bad)) + " with discrepancy")',
+    "for r in bad:",
+    '    log(str(r.invoice) + " | " + str(r.je) + " | " + str(r.grand_total) + " | " + str(r.total_debit))',
+    "",
+    "log(str([r.je for r in bad]))",
+    ""
+  ].join("\n");
+
+  /* ---------- theme ---------- */
+  const root = document.documentElement;
+  const savedTheme = store.get("fcb_theme"); if (savedTheme) root.dataset.theme = savedTheme;
+  $("#btnTheme").onclick = () => {
+    const dark = root.dataset.theme === "dark" || (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+    root.dataset.theme = dark ? "light" : "dark"; store.set("fcb_theme", root.dataset.theme);
+  };
+
+  /* ---------- toast / modal ---------- */
+  let tt; function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 1800); }
+  const modal = $("#modal"), card = $("#card");
+  function openModal(html) { card.innerHTML = html; modal.hidden = false; }
+  function closeModal() { modal.hidden = true; ta.focus(); }
+  function ask(msg, yes, cb) {
+    openModal("<h2>" + esc(msg) + '</h2><div class="bar"><button class="btn" id="askNo">Cancel</button><button class="btn primary" id="askYes">' + esc(yes) + "</button></div>");
+    $("#askNo").onclick = closeModal; $("#askYes").onclick = () => { closeModal(); cb(); };
+  }
+  modal.addEventListener("mousedown", e => { if (e.target === modal) closeModal(); });
+
+  /* ---------- editor core ---------- */
+  function measure() {
+    const s = document.createElement("span");
+    s.style.cssText = "position:absolute;visibility:hidden;white-space:pre;font:inherit;letter-spacing:0";
+    s.textContent = "M".repeat(40); codeEl.appendChild(s);
+    const w = s.getBoundingClientRect().width / 40; s.remove(); if (w > 3) CW = w;
+  }
+  function sync() {
+    hlEl.style.transform = "translate(" + (-ta.scrollLeft) + "px," + (-ta.scrollTop) + "px)";
+    nums.style.transform = "translateY(" + (-ta.scrollTop) + "px)";
+  }
+  let draftT;
+  function render() {
+    const text = ta.value;
+    toks = tokens(text); an = analyze(text, schema); diags = runChecks(text, toks, schema, an);
+    hlEl.innerHTML = hl(text, toks) + "\n";
+    const n = text.split("\n").length, flag = {}, pr = { error: 3, warn: 2, info: 1 };
+    diags.forEach(d => { if (!flag[d.line] || pr[d.level] > pr[flag[d.line]]) flag[d.line] = d.level; });
+    let h = ""; for (let i = 1; i <= n; i++) h += '<div class="ln' + (flag[i] ? " " + flag[i] : "") + '">' + i + "</div>";
+    nums.innerHTML = h; sync(); renderDiags(); status();
+    clearTimeout(draftT); draftT = setTimeout(() => store.set("fcb_draft", ta.value), 400);
+  }
+  function renderDiags() {
+    const el = $("#diags"), c = { error: 0, warn: 0, info: 0 };
+    diags.forEach(d => c[d.level]++);
+    $("#dgTitle").textContent = diags.length ? "Checks (" + diags.length + ")" : "Checks";
+    if (!diags.length) { el.innerHTML = '<div class="ok">No issues found.</div>'; return; }
+    el.innerHTML = diags.map((d, i) => '<button class="dg lv-' + d.level + '" data-i="' + i + '"><i></i><span class="l">Ln ' + d.line + "</span><span>" + esc(d.msg) + "</span></button>").join("");
+    el.querySelectorAll(".dg").forEach(b => b.onclick = () => goLine(diags[+b.dataset.i].line));
+  }
+  function goLine(n) {
+    const lines = ta.value.split("\n"); let off = 0; for (let i = 0; i < n - 1 && i < lines.length; i++) off += lines[i].length + 1;
+    ta.focus(); ta.setSelectionRange(off, off); ta.scrollTop = Math.max(0, (n - 3) * LH); sync(); status();
+  }
+  function caretInfo() {
+    const p = ta.selectionStart, before = ta.value.slice(0, p), ln = before.split("\n").length, ls = before.lastIndexOf("\n") + 1;
+    return { p, ln, col: p - ls, ls };
+  }
+  function status() {
+    const c = caretInfo(); $("#pos").textContent = "Ln " + c.ln + ", Col " + (c.col + 1);
+    const n = diags.filter(d => d.level !== "info").length; $("#count").textContent = n ? n + " to review" : "";
+    if (!popOpen()) renderHint();
+  }
+  function insertAt(s, e, text) {
+    ta.focus(); ta.setSelectionRange(s, e);
+    if (!document.execCommand || !document.execCommand("insertText", false, text)) { ta.setRangeText(text, s, e, "end"); ta.dispatchEvent(new Event("input", { bubbles: true })); }
+  }
+
+  /* ---------- hint dock ---------- */
+  const TIP = '<h2>Hint</h2><p>Type <code>frappe.</code> for the API, or press Ctrl+Space. Inside a SQL string, tables and columns complete (<code>si.</code> lists columns of the aliased table). Variables from your queries complete their columns too.</p>';
+  function hintFor(name, arg) {
+    const e = resolveApi(name, an); if (!e) return null;
+    const ps = (e.params || []).map((p, i) => i === arg ? "<b>" + esc(p) + "</b>" : esc(p)).join(", ");
+    return '<h2>' + esc(e.n.startsWith("doc.") ? name : e.n) + '</h2><div class="sg">' + esc(e.n.startsWith("doc.") ? name : e.n) + (e.params ? "(" + ps + ")" : "") + "</div><p>" + esc(e.doc || "") + "</p>";
+  }
+  function renderHint() {
+    const h = $("#hint"), c = callAt(ta.value, ta.selectionStart, toks);
+    const html = c ? hintFor(c.name, c.arg) : null; h.innerHTML = html || TIP;
+  }
+
+  /* ---------- completion popup ---------- */
+  let items = [], sel = 0, popStart = 0;
+  const popOpen = () => !pop.hidden;
+  function hidePop() { pop.hidden = true; items = []; }
+  function updatePop(forced) {
+    const caret = ta.selectionStart;
+    if (ta.selectionEnd !== caret) return hidePop();
+    const text = ta.value, before = text.slice(0, caret), c = ctxAt(toks, caret); let res = null;
+    if (c && (c.t === "comment" || c.t === "str")) res = null;
+    else if (c && c.t === "tstr") {
+      const k = c.tok, full = text.slice(k.s + 3, c.closed ? k.e - 3 : k.e), b = text.slice(k.s + 3, caret);
+      const r = sqlCompletions(b, full, schema, forced, text[caret] || "");
+      if (r) res = { items: r.items, start: k.s + 3 + r.start };
+    } else {
+      const lineStart = before.lastIndexOf("\n") + 1, r = pyCompletions(before.slice(lineStart), text, an, forced);
+      if (r) res = { items: r.items, start: lineStart + r.start };
+    }
+    if (!res || !res.items.length) return hidePop();
+    items = res.items; popStart = res.start; sel = 0; drawPop(); placePop();
+  }
+  function drawPop() {
+    const it = items[sel];
+    pop.innerHTML = '<div class="plist">' + items.map((x, i) => '<div class="it' + (i === sel ? " sel" : "") + ' k-' + x.kind + '" data-i="' + i + '"><span class="kd">' + (KINDCH[x.kind] || "·") + '</span><span class="lb">' + esc(x.label) + '</span><span class="dt">' + esc(x.detail || "") + "</span></div>").join("") + "</div>" +
+      (it && (it.doc || it.sig) ? '<div class="pdoc">' + (it.sig ? "<code>" + esc(it.sig) + "</code>" : "") + esc(it.doc || "") + "</div>" : "");
+    pop.hidden = false;
+    pop.querySelectorAll(".it").forEach(el => { el.onmousedown = e => { e.preventDefault(); sel = +el.dataset.i; accept(); }; });
+    const s = pop.querySelector(".it.sel"); if (s) s.scrollIntoView({ block: "nearest" });
+    const h = $("#hint"), x = items[sel];
+    if (x && (x.doc || x.sig)) h.innerHTML = "<h2>" + esc(x.label) + "</h2>" + (x.sig ? '<div class="sg">' + esc(x.sig) + "</div>" : "") + "<p>" + esc(x.doc || "") + "</p>";
+  }
+  function placePop() {
+    const before = ta.value.slice(0, popStart), ln = before.split("\n").length - 1, col = popStart - (before.lastIndexOf("\n") + 1);
+    let left = PX + col * CW - ta.scrollLeft, top = PY + (ln + 1) * LH - ta.scrollTop;
+    const W = codeEl.clientWidth, H = codeEl.clientHeight, pw = pop.offsetWidth, ph = pop.offsetHeight;
+    if (left + pw > W - 6) left = Math.max(6, W - pw - 6);
+    if (top + ph > H - 4) top = Math.max(4, PY + ln * LH - ta.scrollTop - ph);
+    pop.style.left = left + "px"; pop.style.top = top + "px";
+  }
+  function accept() {
+    const it = items[sel]; if (!it) return;
+    const caret = ta.selectionStart, v = ta.value, ls = v.lastIndexOf("\n", popStart - 1) + 1;
+    const indent = (v.slice(ls, popStart).match(/^[ \t]*/) || [""])[0];
+    let ins = it.insert.replace(/\n/g, "\n" + indent); const ci = ins.indexOf("$0"); ins = ins.replace("$0", "");
+    hidePop(); insertAt(popStart, caret, ins);
+    let p = popStart + (ci >= 0 ? ci : ins.length);
+    if (it.kind === "tbl" && ci < 0 && ta.value[p] === "`") p++;
+    ta.setSelectionRange(p, p); status();
+  }
+
+  /* ---------- editing helpers ---------- */
+  const OPEN = { "(": ")", "[": "]", "{": "}" };
+  function lineRange() {
+    const v = ta.value, s = v.lastIndexOf("\n", ta.selectionStart - 1) + 1; let e = v.indexOf("\n", ta.selectionEnd); if (e < 0) e = v.length;
+    if (ta.selectionEnd > ta.selectionStart && v[ta.selectionEnd - 1] === "\n") e = ta.selectionEnd - 1;
+    return [s, e];
+  }
+  function reindent(dir) {
+    const [s, e] = lineRange(), v = ta.value, seg = v.slice(s, e), ss = ta.selectionStart, se = ta.selectionEnd;
+    const out = seg.split("\n").map(l => dir > 0 ? "    " + l : l.replace(/^( {1,4}|\t)/, "")).join("\n");
+    insertAt(s, e, out);
+    const d = out.length - seg.length, first = out.split("\n")[0].length - seg.split("\n")[0].length;
+    ta.setSelectionRange(Math.max(s, ss + first), Math.max(s, se + d));
+  }
+  function toggleComment() {
+    const [s, e] = lineRange(), seg = ta.value.slice(s, e), ls = seg.split("\n"), all = ls.filter(l => l.trim()).every(l => /^\s*#/.test(l));
+    const out = ls.map(l => !l.trim() ? l : all ? l.replace(/^(\s*)# ?/, "$1") : l.replace(/^(\s*)/, "$1# ")).join("\n");
+    const ss = ta.selectionStart, se = ta.selectionEnd; insertAt(s, e, out); ta.setSelectionRange(ss, Math.max(ss, se + out.length - seg.length));
+  }
+  ta.addEventListener("keydown", e => {
+    const v = ta.value, p = ta.selectionStart;
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); hidePop(); $("#btnRun").click(); return; }
+    if (popOpen()) {
+      if (e.key === "ArrowDown") { e.preventDefault(); sel = (sel + 1) % items.length; drawPop(); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); sel = (sel - 1 + items.length) % items.length; drawPop(); return; }
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); accept(); return; }
+      if (e.key === "Escape") { e.preventDefault(); hidePop(); renderHint(); return; }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.code === "Space") { e.preventDefault(); updatePop(true); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key === "/") { e.preventDefault(); toggleComment(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === "Tab") { e.preventDefault(); if (e.shiftKey || ta.value.slice(ta.selectionStart, ta.selectionEnd).includes("\n")) reindent(e.shiftKey ? -1 : 1); else insertAt(p, ta.selectionEnd, "    "); return; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const ls = v.lastIndexOf("\n", p - 1) + 1, line = v.slice(ls, p), indent = line.match(/^[ \t]*/)[0], c = ctxAt(toks, p);
+      const t = line.trimEnd(), inStr = c && c.t === "tstr";
+      const extra = (!inStr && /:$/.test(t)) || (!inStr && /[(\[{]$/.test(t)) ? "    " : "";
+      if (/[(\[{]$/.test(t) && OPEN[t.slice(-1)] === v[p]) { insertAt(p, p, "\n" + indent + extra + "\n" + indent); const q = p + 1 + indent.length + extra.length; ta.setSelectionRange(q, q); }
+      else insertAt(p, ta.selectionEnd, "\n" + indent + extra);
+      return;
+    }
+    if (ta.selectionStart !== ta.selectionEnd) return;
+    const c = ctxAt(toks, p), nx = v[p], pv = v[p - 1] || "";
+    if (")]}".includes(e.key) && nx === e.key) { e.preventDefault(); hidePop(); ta.setSelectionRange(p + 1, p + 1); return; }
+    if (OPEN[e.key] && (!c || c.t === "tstr") && (!nx || /[\s)\]},:]/.test(nx))) { e.preventDefault(); insertAt(p, p, e.key + OPEN[e.key]); ta.setSelectionRange(p + 1, p + 1); return; }
+    if (e.key === "`" && c && c.t === "tstr") { e.preventDefault(); if (nx === "`") { hidePop(); ta.setSelectionRange(p + 1, p + 1); } else { insertAt(p, p, "``"); ta.setSelectionRange(p + 1, p + 1); } return; }
+    if ((e.key === '"' || e.key === "'") && (!c || (c.t === "str" && c.tok.closed && c.tok.e - 1 === p && nx === e.key))) {
+      if (nx === e.key) { e.preventDefault(); hidePop(); ta.setSelectionRange(p + 1, p + 1); return; }
+      if (v.slice(p - 2, p) === e.key + e.key) { e.preventDefault(); insertAt(p, p, e.key + e.key.repeat(3)); ta.setSelectionRange(p + 1, p + 1); return; }
+      if (!/\w/.test(pv) && (!nx || /[\s)\]},:]/.test(nx))) { e.preventDefault(); insertAt(p, p, e.key + e.key); ta.setSelectionRange(p + 1, p + 1); return; }
+    }
+    if (e.key === "Backspace" && OPEN[pv] && OPEN[pv] === nx) { e.preventDefault(); insertAt(p - 1, p + 1, ""); return; }
+  });
+  ta.addEventListener("input", e => { render(); const t = e.inputType || ""; if (t.startsWith("delete") && !popOpen()) return; updatePop(false); });
+  ta.addEventListener("scroll", () => { sync(); if (popOpen()) placePop(); });
+  ta.addEventListener("click", () => { hidePop(); status(); });
+  ta.addEventListener("keyup", e => { if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End") { if (!popOpen()) { status(); } } });
+  ta.addEventListener("blur", () => setTimeout(hidePop, 120));
+
+  /* ---------- actions ---------- */
+  $("#btnCopy").onclick = async () => {
+    const text = ta.value;
+    try { await navigator.clipboard.writeText(text); toast("Script copied"); }
+    catch (e) { ta.focus(); ta.select(); const ok = document.execCommand && document.execCommand("copy"); ta.setSelectionRange(0, 0); toast(ok ? "Script copied" : "Select the text and press Ctrl+C"); }
+  };
+  $("#btnClear").onclick = () => { const go = () => { ta.value = ""; render(); ta.focus(); }; if (!ta.value.trim()) go(); else ask("Clear the editor?", "Clear", go); };
+  $("#btnPanel").onclick = () => $("#side").classList.toggle("open");
+  $("#btnInfo").onclick = () => openModal(
+    "<h2>How this board works</h2><ul>" +
+    "<li><b>Run</b> (Ctrl+Enter) sends the script to the connected site's System Console with Commit off, so every change is rolled back. Run is <b>query only</b>: before sending, the script is checked against a read-only allowlist (frappe.db.sql with a literal SELECT/WITH query, get_value, get_all, get_list, get_doc, exists, count, frappe.utils, as_json and plain Python). Anything else, such as save, submit, insert, set_value, delete_doc or commit, aliases like <code>c = frappe.db.commit</code>, getattr or imports, is refused and never reaches the site. The Set data cheats still work for copying into the real console. Set up the site with <b>Connect site</b>.</li>" +
+    "<li>Print results with <code>log(frappe.as_json(rows))</code> or <code>log(rows)</code>. The Output panel turns JSON and Python output (single quotes, None, datetime.date(...)) into clean JSON, or a table with the Table button. Drag the panel's top edge to make it taller.</li>" +
+    "<li>Suggestions come from a built-in list of Frappe calls and a schema of your doctypes. Add your own columns under Schema, using Add from JSON.</li>" +
+    "<li>Variables from your queries complete their columns. After <code>rows = frappe.db.sql(...)</code>, typing <code>r.</code> inside <code>for r in rows</code> lists the selected columns.</li>" +
+    "<li><b>Notes pad</b> (top bar) is a floating, draggable scratch area. Paste an object or list into it and it is formatted automatically, including console output with single quotes, None and datetime.date(...). Use Format, Compact or Table on the text, or on a selection.</li>" +
+    "<li>The Checks panel flags writes, a literal % in SQL with values, missing backticks, unknown columns and unbalanced brackets.</li></ul>" +
+    "<p><b>Sandbox caveat.</b> On v13 the System Console runs scripts in a restricted sandbox: import statements may be blocked, and frappe.db.sql there usually accepts SELECT only. The suggestions list normal Frappe calls, so if one is not recognized in the real console, it is likely not whitelisted there. Always test on the sandbox site first.</p>" +
+    '<div class="bar"><button class="btn primary" id="mClose">Close</button></div>');
+  document.addEventListener("click", e => { if (e.target && e.target.id === "mClose") closeModal(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+
+  /* ---------- sidebar ---------- */
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+    document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + b.dataset.tab));
+  });
+  function insertText(t) {
+    const p = ta.selectionStart, v = ta.value, ls = v.lastIndexOf("\n", p - 1) + 1, indent = (v.slice(ls, p).match(/^[ \t]*/) || [""])[0];
+    let ins = t.replace(/\n/g, "\n" + indent); const ci = ins.indexOf("$0"); ins = ins.replace("$0", "");
+    insertAt(p, ta.selectionEnd, ins); const q = p + (ci >= 0 ? ci : ins.length); ta.setSelectionRange(q, q); status();
+  }
+  function drawSchema() {
+    const q = $("#schemaQ").value.trim().toLowerCase(), box = $("#schemaList"); let h = "", n = 0;
+    Object.keys(schema).forEach(t => {
+      const all = schema[t].cols, tm = t.toLowerCase().includes(q), cs = q && !tm ? all.filter(c => c.includes(q)) : all;
+      if (q && !tm && !cs.length) return; n++;
+      h += '<details class="tbl"' + (q ? " open" : "") + "><summary>" + esc(t) + "<small>" + all.length + (schema[t].custom ? " · custom" : "") + '</small></summary><div class="cols">' +
+        cs.map(c => '<button class="chip" data-c="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div></details>";
+    });
+    box.innerHTML = h || '<div class="empty">No match.</div>';
+    box.querySelectorAll(".chip").forEach(b => b.onclick = () => insertText(b.dataset.c));
+  }
+  $("#schemaQ").oninput = drawSchema;
+  function drawCheats() {
+    const q = $("#cheatQ").value.trim().toLowerCase(), box = $("#cheatList"); let h = "", g = "";
+    const hiCode = c => esc(c).replace(/\b([A-Z][A-Z0-9]{2,})\b/g, "<mark>$1</mark>");
+    CHEATS.forEach((x, i) => {
+      if (q && !(x.t + " " + x.d + " " + x.g + " " + x.c).toLowerCase().includes(q)) return;
+      if (x.g !== g) { g = x.g; h += '<div class="cg">' + esc(g) + "</div>"; }
+      h += '<div class="ch"><div class="hd"><b>' + esc(x.t) + "</b>" + (x.w ? '<span class="wr">writes</span>' : "") + "</div>" + (x.d ? "<p>" + esc(x.d) + "</p>" : "") +
+        "<pre>" + hiCode(x.c) + '</pre><div class="bt"><button data-ins="' + i + '">Insert</button><button data-cp="' + i + '">Copy</button></div></div>';
+    });
+    box.innerHTML = h || '<div class="empty">No match.</div>';
+    box.querySelectorAll("[data-ins]").forEach(b => b.onclick = () => { insertText(CHEATS[+b.dataset.ins].c); if (innerWidth <= 860) $("#side").classList.remove("open"); toast("Inserted"); });
+    box.querySelectorAll("[data-cp]").forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(CHEATS[+b.dataset.cp].c); toast("Copied"); } catch (e) { toast("Copy blocked, use Insert instead"); } });
+  }
+  $("#cheatQ").oninput = drawCheats;
+  function drawSnips() {
+    $("#snipList").innerHTML = SNIPPETS.map((s, i) => '<div class="item"><button class="grow" data-i="' + i + '"><b>' + esc(s.label) + "</b><p>" + esc(s.doc) + "</p></button></div>").join("");
+    $("#snipList").querySelectorAll(".grow").forEach(b => b.onclick = () => { insertText(SNIPPETS[+b.dataset.i].body); if (innerWidth <= 860) $("#side").classList.remove("open"); });
+  }
+  const getSaved = () => jparse(store.get("fcb_scripts")) || [];
+  function drawSaved() {
+    const list = getSaved(), box = $("#savedList");
+    const cn = s => { const c = s.connId && byId(s.connId); return c ? " · " + esc(c.name) : ""; };
+    box.innerHTML = list.length ? list.map((s, i) => '<div class="item"><button class="grow" data-i="' + i + '"><b>' + esc(s.name) + "</b><p>" + new Date(s.ts).toLocaleString() + cn(s) + '</p></button><button class="x" data-d="' + i + '" aria-label="Delete">✕</button></div>').join("") : '<div class="empty">Nothing saved yet. Name the script and press Save.</div>';
+    box.querySelectorAll(".grow").forEach(b => b.onclick = () => {
+      const s = getSaved()[+b.dataset.i]; ta.value = s.code; render(); ta.focus(); if (innerWidth <= 860) $("#side").classList.remove("open");
+      // switch Run to the connection this script was saved with, if it still exists
+      if (s.connId && s.connId !== activeId && byId(s.connId)) useConn(s.connId);
+    });
+    box.querySelectorAll(".x").forEach(b => b.onclick = () => { const l = getSaved(); l.splice(+b.dataset.d, 1); store.set("fcb_scripts", JSON.stringify(l)); drawSaved(); });
+  }
+  $("#btnSave").onclick = () => {
+    const name = $("#saveName").value.trim() || "Script " + new Date().toLocaleTimeString(), l = getSaved();
+    l.unshift({ name, code: ta.value, ts: Date.now(), connId: activeId || undefined }); store.set("fcb_scripts", JSON.stringify(l.slice(0, 50))); $("#saveName").value = ""; drawSaved(); toast("Saved");
+  };
+
+  /* ---------- schema import ---------- */
+  $("#btnResetSchema").onclick = () => ask("Remove columns you added from JSON?", "Remove", () => { store.del("fcb_schema"); schema = buildSchema(); drawSchema(); render(); });
+  $("#btnImport").onclick = () => openModal(
+    "<h2>Add a doctype from JSON</h2><p>Paste a document as returned by the API (<code>[{\"data\": {...}}]</code>, <code>{\"message\": {...}}</code> or the bare object). Its fields become columns, and child tables are added as their own tables. Nothing leaves your browser.</p>" +
+    '<textarea id="jsonIn" placeholder="Paste JSON here"></textarea><div class="bar"><span class="msg" id="jsonMsg"></span><button class="btn" id="jsonCancel">Cancel</button><button class="btn primary" id="jsonGo">Add columns</button></div>');
+  document.addEventListener("click", e => {
+    if (e.target.id === "jsonCancel") closeModal();
+    if (e.target.id === "jsonGo") {
+      const msg = $("#jsonMsg"); let o = jparse($("#jsonIn").value);
+      if (!o) { msg.textContent = "That is not valid JSON."; return; }
+      while (Array.isArray(o)) o = o[0];
+      if (o && o.data && typeof o.data === "object") o = o.data; else if (o && o.message && typeof o.message === "object") o = o.message;
+      if (!o || typeof o !== "object" || !o.doctype) { msg.textContent = "No 'doctype' key found in the object."; return; }
+      const custom = jparse(store.get("fcb_schema")) || {}; let added = [o.doctype];
+      custom[o.doctype] = Object.keys(o).filter(k => !Array.isArray(o[k]) || !o[k].length || typeof o[k][0] !== "object");
+      Object.keys(o).forEach(k => { const a = o[k]; if (Array.isArray(a) && a.length && a[0] && typeof a[0] === "object" && a[0].doctype) { custom[a[0].doctype] = Object.keys(a[0]); added.push(a[0].doctype); } });
+      store.set("fcb_schema", JSON.stringify(custom)); schema = buildSchema(); drawSchema(); render(); closeModal(); toast("Added " + added.join(", "));
+    }
+  });
+
+
+  /* ---------- floating notes pad ---------- */
+  const pad = $("#pad"), padTa = $("#padTa"), padH = $("#padH"), padMsg = $("#padMsg"), padAuto = $("#padAuto");
+  let padT;
+  function pmsg(t, err) { padMsg.textContent = t; padMsg.className = err ? "err" : ""; clearTimeout(padT); padT = setTimeout(() => { padMsg.textContent = ""; }, 3500); }
+  function padSave() { store.set("fcb_notes", padTa.value); }
+  function padPlace(t, s, e) {
+    padTa.focus(); padTa.setSelectionRange(s, e);
+    if (!document.execCommand || !document.execCommand("insertText", false, t)) { padTa.setRangeText(t, s, e, "end"); }
+    padSave();
+  }
+  function padRun(mode) {
+    const hasSel = padTa.selectionEnd > padTa.selectionStart, s = hasSel ? padTa.selectionStart : 0, e = hasSel ? padTa.selectionEnd : padTa.value.length;
+    const r = formatLoose(padTa.value.slice(s, e), mode);
+    if (!r) { pmsg("Nothing to format. Select or paste an object or list.", true); return; }
+    if (r.error) { pmsg("Could not parse: " + r.error, true); return; }
+    padPlace(r.text, s, e); pmsg(mode === "compact" ? "Compacted" : mode === "table" ? "Table view" : "Formatted");
+  }
+  function padOpen(on) {
+    pad.hidden = !on; store.set("fcb_padopen", on ? "1" : "0");
+    if (on) { clampPad(); padTa.focus(); }
+  }
+  function clampPad() {
+    const r = pad.getBoundingClientRect();
+    if (r.left < 0 || r.top < 0 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) {
+      pad.style.left = Math.max(0, Math.min(r.left, innerWidth - r.width)) + "px"; pad.style.top = Math.max(0, Math.min(r.top, innerHeight - 60)) + "px"; pad.style.right = "auto"; pad.style.bottom = "auto";
+    }
+  }
+  padTa.value = store.get("fcb_notes") || "";
+  const pp = jparse(store.get("fcb_padpos"));
+  if (pp && pp.left != null && pp.left < innerWidth - 80 && pp.top < innerHeight - 40) { pad.style.left = pp.left + "px"; pad.style.top = pp.top + "px"; pad.style.right = "auto"; pad.style.bottom = "auto"; if (pp.w) pad.style.width = pp.w + "px"; if (pp.h) pad.style.height = pp.h + "px"; }
+  if (store.get("fcb_padauto") === "0") padAuto.checked = false;
+  if (store.get("fcb_padopen") === "1") pad.hidden = false;
+  padAuto.onchange = () => store.set("fcb_padauto", padAuto.checked ? "1" : "0");
+  padTa.addEventListener("input", () => { clearTimeout(padTa._t); padTa._t = setTimeout(padSave, 400); });
+  padTa.addEventListener("paste", e => {
+    if (!padAuto.checked) return;
+    const t = (e.clipboardData || window.clipboardData).getData("text"), r = formatLoose(t);
+    if (!r || r.error) return;
+    e.preventDefault(); padPlace(r.text, padTa.selectionStart, padTa.selectionEnd); pmsg(r.count > 1 ? "Formatted " + r.count + " objects" : "Formatted");
+  });
+  $("#padFmt").onclick = () => padRun("pretty");
+  $("#padCmp").onclick = () => padRun("compact");
+  $("#padTbl").onclick = () => padRun("table");
+  $("#padCp").onclick = async () => { const t = padTa.selectionEnd > padTa.selectionStart ? padTa.value.slice(padTa.selectionStart, padTa.selectionEnd) : padTa.value; try { await navigator.clipboard.writeText(t); pmsg("Copied"); } catch (e) { padTa.select(); pmsg(document.execCommand && document.execCommand("copy") ? "Copied" : "Press Ctrl+C", false); } };
+  $("#padClr").onclick = () => { padTa.value = ""; padSave(); padTa.focus(); };
+  $("#padX").onclick = () => padOpen(false);
+  $("#padMin").onclick = () => { pad.classList.toggle("min"); $("#padMin").innerHTML = pad.classList.contains("min") ? "&#9633;" : "&minus;"; };
+  $("#btnPad").onclick = () => padOpen(pad.hidden);
+  let drag = null;
+  padH.addEventListener("pointerdown", e => { if (e.target.closest("button,label,input")) return; const r = pad.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; padH.setPointerCapture(e.pointerId); });
+  padH.addEventListener("pointermove", e => {
+    if (!drag) return;
+    pad.style.left = Math.min(Math.max(0, e.clientX - drag.dx), innerWidth - 80) + "px"; pad.style.top = Math.min(Math.max(0, e.clientY - drag.dy), innerHeight - 40) + "px"; pad.style.right = "auto"; pad.style.bottom = "auto";
+  });
+  const padEnd = () => { if (!drag && !pad.dataset.rs) return; drag = null; const r = pad.getBoundingClientRect(); store.set("fcb_padpos", JSON.stringify({ left: Math.round(r.left), top: Math.round(r.top), w: Math.round(r.width), h: pad.classList.contains("min") ? undefined : Math.round(r.height) })); };
+  padH.addEventListener("pointerup", padEnd);
+  pad.addEventListener("mousedown", () => { pad.dataset.rs = "1"; });
+  addEventListener("mouseup", () => { if (pad.dataset.rs) { padEnd(); delete pad.dataset.rs; } });
+  addEventListener("resize", () => { if (!pad.hidden) clampPad(); });
+
+  /* ---------- site connection ---------- */
+  const sess = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }, del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
+  const EXEC = "/api/method/frappe.desk.doctype.system_console.system_console.execute_code";
+  const host = c => { try { return new URL(c.url).host; } catch (e) { return c.url; } };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  // conns live in localStorage; a secret the user chose not to save lives in sessionStorage (fcb_secs) for this tab only
+  let conns = jparse(store.get("fcb_conns")) || [], activeId = store.get("fcb_conn_active") || "", conn = null;
+  const tabSecrets = () => jparse(sess.get("fcb_secs")) || {};
+  const setTabSecret = (id, v) => { const s = tabSecrets(); if (v) s[id] = v; else delete s[id]; sess.set("fcb_secs", JSON.stringify(s)); };
+  const byId = id => conns.find(c => c.id === id);
+  const secretOf = c => c.saveSecret ? c.secret : tabSecrets()[c.id];
+  const connLabel = c => c.name + " · " + host(c);
+  // carry over the single connection saved by the previous version of the board
+  const legacy = jparse(store.get("fcb_conn")) || jparse(sess.get("fcb_conn"));
+  if (legacy && legacy.url && !conns.length) {
+    const keep = !!store.get("fcb_conn"), id = uid();
+    conns.push({ id, name: host(legacy), url: legacy.url, key: legacy.key, user: legacy.user, saveSecret: keep, secret: keep ? legacy.secret : undefined });
+    if (!keep) setTabSecret(id, legacy.secret);
+    activeId = id;
+  }
+  store.del("fcb_conn"); sess.del("fcb_conn");
+  function persistConns() { store.set("fcb_conns", JSON.stringify(conns)); store.set("fcb_conn_active", activeId || ""); }
+  function useConn(id, quiet) {
+    activeId = byId(id) ? id : ""; persistConns();
+    const c = byId(activeId); conn = c ? Object.assign({}, c, { secret: secretOf(c) }) : null;
+    drawConn(); drawOut(); drawSaved();
+    if (c && !quiet) toast("Run now uses " + c.name);
+  }
+  function drawConn() {
+    const sel = $("#connSel"), c = byId(activeId);
+    sel.innerHTML = '<option value="" hidden>' + (conns.length ? "Choose connection" : "No connection") + "</option>" +
+      conns.map(x => '<option value="' + esc(x.id) + '">' + esc(x.name) + "</option>").join("") +
+      '<option disabled>──────────</option><option value="__new">+ New connection…</option>' + (conns.length ? '<option value="__manage">Manage connections…</option>' : "");
+    sel.value = c ? c.id : "";
+    $("#connDot").classList.toggle("on", !!(conn && conn.secret));
+    $("#connWrap").title = c ? c.name + ": " + c.url + " as " + (c.user || "?") + (conn && conn.secret ? "" : " (secret needed)") : "Choose the site Run uses";
+  }
+  $("#connSel").onchange = e => {
+    const v = e.target.value; drawConn();
+    if (v === "__new") openConn(null); else if (v === "__manage") openManager(); else useConn(v);
+  };
+  function nameErr(name, id) {
+    name = name.trim();
+    if (!name) return "Give the connection a name.";
+    if (name.length > 40) return "Keep the name to 40 characters or fewer.";
+    if (conns.some(c => c.id !== id && c.name.toLowerCase() === name.toLowerCase())) return "Another connection already uses this name.";
+    return "";
+  }
+  function serverMsg(data, txt) {
+    const strip = s => String(s).replace(/<[^>]+>/g, "").trim();
+    try { const l = JSON.parse(data._server_messages); const m = l.map(x => { const o = jparse(x); return strip(o && o.message || x); }).filter(Boolean); if (m.length) return m.join(" "); } catch (e) {}
+    if (data && data.exception) return strip(String(data.exception).split("\n").pop());
+    if (data && data.exc_type) return data.exc_type;
+    return strip((txt || "").slice(0, 200));
+  }
+  async function call(c, path, opts) {
+    opts = opts || {};
+    const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), opts.timeout || 120000);
+    let res, txt;
+    try {
+      res = await fetch(c.url + path, { method: opts.method || "GET", body: opts.body, signal: ctl.signal, credentials: "omit", cache: "no-store",
+        headers: { Authorization: "token " + c.key + ":" + c.secret, Accept: "application/json" } });
+      txt = await res.text();
+    } catch (e) {
+      const err = new Error(e.name === "AbortError" ? "The site did not answer within " + Math.round((opts.timeout || 120000) / 1000) + " seconds."
+        : "Could not reach " + c.url + ". Either the site is down or it blocks requests from this page (CORS). Run  bench --site YOUR_SITE set-config allow_cors \"*\"  then bench restart. See Connect → Setup steps.");
+      err.code = e.name === "AbortError" ? "timeout" : "network"; throw err;
+    } finally { clearTimeout(tm); }
+    const data = jparse(txt) || {};
+    if (res.ok) return data;
+    const sm = serverMsg(data, txt), err = new Error(
+      res.status === 401 ? "The site rejected the API key or secret (401)." :
+      res.status === 403 ? "The key is valid, but this user may not run the System Console (403). It needs the System Manager role." + (sm ? " Server says: " + sm : "") :
+      res.status === 404 ? "Endpoint not found (404). Check that the URL points at the Frappe site itself." :
+      "Server error " + res.status + (sm ? ": " + sm : "."));
+    err.code = res.status; throw err;
+  }
+  // id: connection to edit, or null for a new one. back: return to the Manage dialog afterwards
+  function openConn(id, thenRun, back) {
+    const old = id ? byId(id) : null, c = old ? Object.assign({}, old, { secret: secretOf(old) || "" }) : { saveSecret: true };
+    openModal(
+      "<h2>" + (old ? "Edit connection" : "New connection") + "</h2><p>Run sends your script to the site's System Console as the user who owns the API key. Only read-only queries are sent, and the changes are always rolled back.</p>" +
+      '<label class="field"><span>Name</span><input id="cName" placeholder="e.g. Sandbox, UAT, Live (read-only)" maxlength="40" autocomplete="off" spellcheck="false" value="' + esc(c.name || "") + '"><small id="cNameE"></small></label>' +
+      '<label class="field"><span>Site URL</span><input id="cUrl" placeholder="http://localhost:8000" autocomplete="off" spellcheck="false" value="' + esc(c.url || "") + '"><small id="cUrlE"></small></label>' +
+      '<label class="field"><span>API key</span><input id="cKey" placeholder="15 characters, or paste: token key:secret" autocomplete="off" spellcheck="false" value="' + esc(c.key || "") + '"><small id="cKeyE"></small></label>' +
+      '<div class="field"><span>API secret</span><div class="two"><input id="cSec" type="password" autocomplete="new-password" spellcheck="false" value="' + esc(c.secret || "") + '" aria-label="API secret"><button class="btn" type="button" id="cShow">Show</button></div><small id="cSecE"></small></div>' +
+      '<label class="chk"><input type="checkbox" id="cRem"' + (c.saveSecret ? " checked" : "") + "> Save the secret in this browser. Untick to type it again in each new tab.</label>" +
+      '<details class="howto"' + (conns.length ? "" : " open") + "><summary>Setup steps</summary><ol>" +
+      "<li>In Desk open the user record (User list → the user) → <b>API Access</b> → <b>Generate Keys</b>. Copy the secret straight away, because it is shown only once.</li>" +
+      "<li>That user needs the <b>System Manager</b> role.</li>" +
+      "<li>Let this page call the site: <code>bench --site YOUR_SITE set-config allow_cors \"*\"</code> then <code>bench restart</code>.</li>" +
+      "<li>v14 and later only: <code>bench set-config -g server_script_enabled 1</code></li>" +
+      "<li>Frappe's header format is <code>token API_KEY:API_SECRET</code>, key first. You can paste that whole line into the API key field.</li></ol></details>" +
+      '<div class="bar"><span class="msg" id="cMsg"></span><button class="btn" id="cCancel">' + (back ? "Back" : "Cancel") + '</button><button class="btn primary" id="cGo">Test and save</button></div>');
+    const nm = $("#cName"), u = $("#cUrl"), k = $("#cKey"), s = $("#cSec"), msg = $("#cMsg");
+    const setMsg = (t, cls) => { msg.textContent = t; msg.className = "msg " + (cls || ""); };
+    const fieldErr = (inp, eid, e) => { inp.classList.toggle("bad", !!e); $(eid).textContent = e; return !e; };
+    const vName = () => fieldErr(nm, "#cNameE", nameErr(nm.value, id));
+    const vUrl = () => fieldErr(u, "#cUrlE", normUrl(u.value).err || "");
+    const vKey = () => fieldErr(k, "#cKeyE", credErr(k.value.trim(), "key"));
+    const vSec = () => { let e = credErr(s.value.trim(), "secret"); if (!e && s.value.trim() === k.value.trim()) e = "The secret is the same as the key. They are two different values."; return fieldErr(s, "#cSecE", e); };
+    if (old && !c.secret) setMsg("Enter the secret again. It was kept for one tab only.");
+    nm.addEventListener("input", () => { nm.dataset.typed = "1"; if (nm.classList.contains("bad")) vName(); });
+    nm.addEventListener("blur", () => nm.value.trim() && vName());
+    u.addEventListener("blur", () => {
+      if (!u.value.trim()) return;
+      // suggest a name from the host until the user types one
+      if (vUrl() && !nm.value.trim() && !nm.dataset.typed) { nm.value = host({ url: normUrl(u.value).url }); vName(); }
+    });
+    k.addEventListener("input", () => { const t = splitToken(k.value); if (t) { k.value = t.key; s.value = t.secret; setMsg("Split the pasted token into key and secret."); vSec(); } if (k.classList.contains("bad")) vKey(); });
+    s.addEventListener("input", () => { const t = splitToken(s.value); if (t) { k.value = t.key; s.value = t.secret; setMsg("Split the pasted token into key and secret."); vKey(); } if (s.classList.contains("bad")) vSec(); });
+    k.addEventListener("blur", () => k.value.trim() && vKey());
+    s.addEventListener("blur", () => s.value.trim() && vSec());
+    $("#cShow").onclick = () => { const p = s.type === "password"; s.type = p ? "text" : "password"; $("#cShow").textContent = p ? "Hide" : "Show"; };
+    $("#cCancel").onclick = () => back ? openManager() : closeModal();
+    $("#cGo").onclick = async () => {
+      if (!nm.value.trim() && vUrl()) nm.value = host({ url: normUrl(u.value).url });
+      const ok = [vName(), vUrl(), vKey(), vSec()].every(Boolean);
+      if (!ok) { setMsg("Fix the fields marked in red.", "bad"); return; }
+      const c2 = { url: normUrl(u.value).url, key: k.value.trim(), secret: s.value.trim() };
+      $("#cGo").disabled = true; setMsg("Testing the connection…");
+      try {
+        let data, swapped = false;
+        try { data = await call(c2, "/api/method/frappe.auth.get_logged_user", { timeout: 20000 }); }
+        catch (e) {
+          if (e.code !== 401) throw e;
+          // people often paste secret:key; try the other order once before giving up
+          try { data = await call({ url: c2.url, key: c2.secret, secret: c2.key }, "/api/method/frappe.auth.get_logged_user", { timeout: 20000 }); swapped = true; }
+          catch (e2) { throw e; }
+          const t = c2.key; c2.key = c2.secret; c2.secret = t;
+        }
+        const user = data.message || "";
+        if (!user || user === "Guest") throw new Error("The site answered, but the key did not sign anyone in.");
+        const dup = conns.find(x => x.id !== id && x.url === c2.url && x.key === c2.key);
+        if (dup) { fieldErr(k, "#cKeyE", "This key on this site is already saved."); throw new Error("Already saved as \"" + dup.name + "\". Edit that one instead."); }
+        if (!$("#modal") || modal.hidden) return;
+        const keep = $("#cRem").checked, entry = { id: id || uid(), name: nm.value.trim(), url: c2.url, key: c2.key, user, saveSecret: keep, secret: keep ? c2.secret : undefined };
+        setTabSecret(entry.id, keep ? "" : c2.secret);
+        const at = conns.findIndex(x => x.id === entry.id);
+        if (at >= 0) conns[at] = entry; else conns.push(entry);
+        useConn(entry.id, true);
+        toast("Saved " + entry.name + ", connected as " + user + (swapped ? " (key and secret were swapped, fixed)" : ""));
+        if (back) openManager(); else closeModal();
+        if (thenRun) runScript();
+      } catch (e) {
+        if (e.code === 401) { fieldErr(k, "#cKeyE", "Check this value."); fieldErr(s, "#cSecE", "Check this value. Generating new keys makes the old secret invalid."); }
+        if (e.code === "network" || e.code === 404) fieldErr(u, "#cUrlE", "Check the URL.");
+        setMsg(e.message, "bad");
+      } finally { const g = $("#cGo"); if (g) g.disabled = false; }
+    };
+    (!c.name ? nm : !c.url ? u : !c.key ? k : s).focus();
+  }
+
+  function openManager(note) {
+    openModal('<h2>Connections</h2><p>' + esc(note || "Pick the connection Run uses. Click a name to rename it. Saved scripts remember the connection they were saved with.") + '</p><div id="mList"></div>' +
+      '<div class="bar"><span class="msg"></span><button class="btn" id="mNew">New connection</button><button class="btn primary" id="mDone">Done</button></div>');
+    const box = $("#mList"), tabS = tabSecrets();
+    function draw() {
+      if (!conns.length) { box.innerHTML = '<div class="empty">No saved connections yet.</div>'; return; }
+      box.innerHTML = conns.map(c => {
+        const sec = c.saveSecret ? "secret saved" : tabS[c.id] ? "secret for this tab only" : '<span class="need">secret needed</span>';
+        return '<div class="cx' + (c.id === activeId ? " on" : "") + '" data-id="' + esc(c.id) + '">' +
+          '<input type="radio" name="cuse" aria-label="Use ' + esc(c.name) + '"' + (c.id === activeId ? " checked" : "") + ">" +
+          '<div class="cxm"><input class="cxn" value="' + esc(c.name) + '" maxlength="40" aria-label="Connection name" spellcheck="false">' +
+          '<small class="cxi" title="' + esc(c.url) + '">' + esc(host(c)) + " · " + esc(c.user || "?") + " · " + sec + '</small><small class="cxe"></small></div>' +
+          '<button class="btn" data-edit>Edit</button><button class="btn" data-del>Delete</button></div>';
+      }).join("");
+      box.querySelectorAll(".cx").forEach(row => {
+        const cid = row.dataset.id, inp = row.querySelector(".cxn"), er = row.querySelector(".cxe"), del = row.querySelector("[data-del]");
+        row.querySelector("input[type=radio]").onchange = () => { useConn(cid); box.querySelectorAll(".cx").forEach(r => r.classList.toggle("on", r === row)); };
+        const commit = () => {
+          const c = byId(cid); if (!c) return;
+          const e = nameErr(inp.value, cid); inp.classList.toggle("bad", !!e); er.textContent = e;
+          if (e || inp.value.trim() === c.name) return;
+          c.name = inp.value.trim(); persistConns(); useConn(activeId, true); toast("Renamed to " + c.name);
+        };
+        inp.addEventListener("keydown", e => {
+          if (e.key === "Enter") { e.preventDefault(); inp.blur(); }
+          if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); inp.value = byId(cid).name; inp.classList.remove("bad"); er.textContent = ""; inp.blur(); }
+        });
+        inp.addEventListener("input", () => { if (inp.classList.contains("bad")) { const e = nameErr(inp.value, cid); inp.classList.toggle("bad", !!e); er.textContent = e; } });
+        inp.addEventListener("blur", commit);
+        row.querySelector("[data-edit]").onclick = () => openConn(cid, false, true);
+        del.onclick = () => {
+          if (!del.classList.contains("danger")) { del.classList.add("danger"); del.textContent = "Confirm delete"; setTimeout(() => { if (del.isConnected) { del.classList.remove("danger"); del.textContent = "Delete"; } }, 4000); return; }
+          const name = byId(cid).name;
+          conns = conns.filter(c => c.id !== cid); setTabSecret(cid, "");
+          useConn(activeId === cid ? "" : activeId, true); draw(); toast("Deleted " + name);
+        };
+      });
+    }
+    draw();
+    $("#mNew").onclick = () => openConn(null, false, true);
+    $("#mDone").onclick = closeModal;
+  }
+
+  /* ---------- run + output ---------- */
+  let running = false, lastOut = null, outMode = store.get("fcb_outmode") || "pretty";
+  function setDTab(d) {
+    document.querySelectorAll(".dtabs>button").forEach(b => b.classList.toggle("on", b.dataset.d === d));
+    document.querySelectorAll(".dpane").forEach(p => p.classList.toggle("on", p.id === d));
+  }
+  document.querySelectorAll(".dtabs>button").forEach(b => b.onclick = () => setDTab(b.dataset.d));
+  function outText() {
+    if (!lastOut || lastOut.raw == null) return "";
+    if (outMode === "raw") return lastOut.raw;
+    return lastOut.segs.map(g => g.t != null ? g.t : outMode === "table" ? toTable(g.v) : prettyJson(g.v)).join("\n\n");
+  }
+  function drawOut() {
+    const el = $("#out"), o = lastOut;
+    ["pretty", "table", "raw"].forEach(m => $("#o" + (m === "pretty" ? "Pretty" : m === "table" ? "Tbl" : "Raw")).classList.toggle("on", outMode === m));
+    $("#otools").hidden = !(o && o.raw != null && o.raw.trim());
+    if (!o) { el.innerHTML = '<div class="empty">' + (conn ? "Press Run or Ctrl+Enter to execute on " + esc(connLabel(conn)) + "." : "Choose a connection in the top bar, then press Run.") + " Print results with <code>log(frappe.as_json(rows))</code> or <code>log(rows)</code>; both come back as clean JSON.</div>"; return; }
+    if (o.kind === "running") { el.innerHTML = '<div class="ometa"><span class="spin"></span>Running on ' + esc(o.host) + "…</div>"; return; }
+    if (o.kind === "blocked") {
+      el.innerHTML = '<div class="ometa bad">Not sent. Run only accepts read-only queries, and these lines use something outside the read-only list. Nothing reached the site.</div>' +
+        o.hits.map(h => '<button class="dg lv-error" data-l="' + h.line + '"><i></i><span class="l">Ln ' + h.line + "</span><span>" + esc(h.what) + "</span></button>").join("");
+      el.querySelectorAll("[data-l]").forEach(b => b.onclick = () => goLine(+b.dataset.l)); return;
+    }
+    const nVals = o.segs ? o.segs.filter(g => g.v != null).length : 0, one = o.segs && o.segs.length === 1 && Array.isArray(o.segs[0].v) ? o.segs[0].v.length : null;
+    let meta = esc(o.host || "") + (o.ms != null ? " · " + (o.ms < 1000 ? o.ms + " ms" : (o.ms / 1000).toFixed(1) + " s") : "") + (o.at ? " · " + o.at : "");
+    if (o.kind === "ok") meta += one != null ? " · " + one + " row" + (one === 1 ? "" : "s") : nVals ? " · " + nVals + " value" + (nVals === 1 ? "" : "s") : "";
+    if (o.kind === "ok") meta += " · rolled back";
+    let body;
+    if (o.kind === "fail") body = '<pre class="tb">' + esc(o.raw) + "</pre>";
+    else if (!o.raw.trim()) body = '<div class="empty">The script ran but printed nothing. Add <code>log(frappe.as_json(rows))</code> to see the result.</div>';
+    else if (o.kind === "error" || outMode === "raw") body = '<pre class="' + (o.kind === "error" ? "tb" : "txt") + '">' + esc(o.raw) + "</pre>";
+    else body = o.segs.map(g => g.t != null ? '<pre class="txt">' + esc(g.t) + "</pre>" : outMode === "table" ? "<pre>" + esc(toTable(g.v)) + "</pre>" : "<pre>" + hlJson(prettyJson(g.v)) + "</pre>").join("");
+    el.innerHTML = '<div class="ometa' + (o.kind === "ok" ? "" : " bad") + '">' + (o.kind === "ok" ? "" : o.kind === "error" ? "Python error · " : "Request failed · ") + meta + "</div>" + body;
+    el.scrollTop = 0;
+  }
+  function showOut(o) { lastOut = o; if (o.raw != null) o.segs = parseOut(o.raw); setDTab("out"); drawOut(); }
+  async function runScript() {
+    if (running) return;
+    const code = ta.value;
+    if (!code.trim()) { toast("Nothing to run"); return; }
+    const hits = readOnlyScan(code);
+    if (hits.length) { showOut({ kind: "blocked", hits }); return; }
+    if (!conn) { if (conns.length) openManager("Choose the connection Run should use, then press Run again."); else openConn(null, true); return; }
+    if (!conn.secret) { openConn(conn.id, true); return; }
+    const errs = diags.filter(d => d.level === "error");
+    if (errs.length) { toast("Fix the errors in Checks first"); setDTab("diags"); return; }
+    running = true; const btn = $("#btnRun"); btn.disabled = true; btn.textContent = "Running…";
+    showOut({ kind: "running", host: connLabel(conn) });
+    const t0 = performance.now(), at = new Date().toLocaleTimeString();
+    try {
+      const body = new URLSearchParams({ doc: JSON.stringify({ doctype: "System Console", console: code, type: "Python", commit: 0 }) });
+      const data = await call(conn, EXEC, { method: "POST", body });
+      const m = data.message, raw = typeof m === "string" ? m : (m && m.output) || "";
+      showOut({ kind: /^Traceback \(most recent call last\)/m.test(raw) ? "error" : "ok", raw, host: connLabel(conn), ms: Math.round(performance.now() - t0), at });
+    } catch (e) {
+      let msg = e.message;
+      if (/ServerScriptNotEnabled|server script/i.test(msg)) msg += "\n\nEnable it with:  bench set-config -g server_script_enabled 1";
+      if (e.code === 401) msg += "\nOpen the connection menu → Manage connections → Edit, and check the key and secret.";
+      showOut({ kind: "fail", raw: msg, host: connLabel(conn), ms: Math.round(performance.now() - t0), at });
+    } finally { running = false; btn.disabled = false; btn.textContent = "Run"; }
+  }
+  $("#btnRun").onclick = runScript;
+  const setMode = m => { outMode = m; store.set("fcb_outmode", m); drawOut(); };
+  $("#oPretty").onclick = () => setMode("pretty");
+  $("#oTbl").onclick = () => setMode("table");
+  $("#oRaw").onclick = () => setMode("raw");
+  $("#oCp").onclick = async () => { const t = outText(); try { await navigator.clipboard.writeText(t); toast("Output copied"); } catch (e) { toast("Copy blocked by the browser"); } };
+  $("#oPad").onclick = () => { const t = outText(); if (!t) return; padOpen(true); padTa.value = (padTa.value.trim() ? padTa.value.replace(/\s*$/, "\n\n") : "") + t; padSave(); padTa.scrollTop = padTa.scrollHeight; };
+
+  /* ---------- dock resize ---------- */
+  const dock = $("#dock"), grip = $("#grip"), dh = +store.get("fcb_dockh");
+  const clampDock = h => Math.round(Math.min(Math.max(h, 110), innerHeight * 0.75));
+  if (dh) dock.style.height = clampDock(dh) + "px";
+  let rs = null;
+  grip.addEventListener("pointerdown", e => { rs = { y: e.clientY, h: dock.getBoundingClientRect().height }; grip.setPointerCapture(e.pointerId); e.preventDefault(); });
+  grip.addEventListener("pointermove", e => { if (rs) dock.style.height = clampDock(rs.h + rs.y - e.clientY) + "px"; });
+  grip.addEventListener("pointerup", () => { if (!rs) return; rs = null; store.set("fcb_dockh", parseInt(dock.style.height, 10)); if (popOpen()) placePop(); });
+
+  /* ---------- boot ---------- */
+  useConn(activeId, true);
+  ta.value = store.get("fcb_draft") || DEFAULT;
+  drawSchema(); drawCheats(); drawSnips(); drawSaved(); measure(); render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
+  addEventListener("resize", () => { measure(); if (popOpen()) placePop(); });
+  ta.focus();
+})();
+
+</script>
+</body>
+</html>

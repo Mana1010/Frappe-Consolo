@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL_PROD")
+  // set from NODE_ENV by src/config/load-env.ts and scripts/prisma.mjs; never edit these two in .env
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  sessions     Session[]
+  connections  Connection[]
+  scripts      Script[]
+  runs         Run[]
+  note         Note?
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Connection {
+  id            String       @id @default(cuid())
+  ownerId       String
+  owner         User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name          String
+  urlEnc        String // AES-256-GCM, like apiKeyEnc and secretEnc
+  apiKeyEnc     String
+  secretEnc     String? // null when saveSecret=false (secret kept in memory)
+  fingerprint   String // HMAC of ownerId|url|apiKey, for duplicate detection
+  saveSecret    Boolean      @default(true)
+  user          String? // from get_logged_user at last test
+  frappeVersion String? // from get_versions at last test, e.g. "13.58.22"
+  writable      Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  scripts       Script[]
+  runs          Run[]
+  schema        SchemaCache?
+
+  @@unique([ownerId, name])
+  @@unique([ownerId, fingerprint])
+}
+
+model Script {
+  id           String      @id @default(cuid())
+  ownerId      String
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String
+  code         String      @db.Text
+  connectionId String?
+  connection   Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([ownerId, createdAt])
+}
+
+enum RunMode {
+  READ
+  DRY_RUN
+  COMMIT
+}
+
+enum RunStatus {
+  OK
+  ERROR
+  BLOCKED
+  FAILED
+  ABORTED
+}
+
+model Run {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionId   String?
+  connection     Connection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  connectionName String
+  mode           RunMode
+  status         RunStatus
+  code           String      @db.Text
+  output         String?     @db.Text // raw user-visible console output (protocol markers removed)
+  error          String?     @db.Text // request/guard error message
+  blocked        Json? // [{line, what}] when BLOCKED
+  plan           Json? // DRY_RUN: planned changes; COMMIT: applied changes
+  planText       String?     @db.Text // DRY_RUN only: exact JSON text returned by Frappe (embedded verbatim in the commit run)
+  changeCount    Int?
+  dryRunId       String? // COMMIT: the DRY_RUN it confirmed
+  committedRunId String? // DRY_RUN: set once committed (a dry run can be committed once)
+  durationMs     Int?
+  createdAt      DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model SchemaCache {
+  connectionId String     @id
+  connection   Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  data         Json // { doctypes: [{ name, istable, issingle, fields: [{ f, t, o, l }] }] }
+  doctypeCount Int
+  syncedAt     DateTime   @default(now())
+}
+
+model Note {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  updatedAt DateTime @updatedAt
+}
