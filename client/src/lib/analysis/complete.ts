@@ -25,25 +25,42 @@ function apiItem(e: ApiEntry): CompletionItem {
   return { label, insert: ins, kind: e.kind, detail: e.params ? "(" + e.params.join(", ") + ")" : e.kind, doc: e.doc, sig: sig(e) };
 }
 
-export function membersOf(chain: string, an: Analysis): CompletionItem[] {
+/** Field completions for a doctype from the synced (or fallback) schema. */
+export function fieldItems(schema: Schema, doctype: string): CompletionItem[] {
+  const t = schema[doctype];
+  if (!t) return [];
+  const types = t.types || {};
+  return t.cols.map(c => ({ label: c, insert: c, kind: "field" as const, detail: types[c] || doctype, doc: "Field of " + doctype + "." + (types[c] ? " " + types[c] + "." : "") }));
+}
+
+const ROW_METHODS = new Set(["doc.get", "doc.as_dict"]);
+
+export function membersOf(chain: string, an: Analysis, schema: Schema = {}): CompletionItem[] {
   const direct = API.filter(e => e.n.startsWith(chain + ".") && !e.n.slice(chain.length + 1).includes("."));
   if (direct.length) return direct.map(apiItem);
-  if (an.docVars.has(chain)) return DOCAPI.map(e => {
-    const it = apiItem(e);
-    it.label = e.n.slice(4);
-    if (e.ins === undefined && e.kind === "method") it.insert = it.label + "($0)";
-    else if (e.kind === "prop") it.insert = it.label;
-    return it;
-  });
+  const dt = an.docTypes[chain];
+  // documents get the document API; child rows from a loop only get() and as_dict()
+  const methods = an.docVars.has(chain) ? DOCAPI : dt ? DOCAPI.filter(e => ROW_METHODS.has(e.n)) : [];
+  if (methods.length || dt) {
+    const out = methods.map(e => {
+      const it = apiItem(e);
+      it.label = e.n.slice(4);
+      if (e.ins === undefined && e.kind === "method") it.insert = it.label + "($0)";
+      else if (e.kind === "prop") it.insert = it.label;
+      return it;
+    });
+    // methods first (few), then the doctype's fields; rank() re-sorts once the user types
+    return dt ? out.concat(fieldItems(schema, dt).filter(f => !out.some(o => o.label === f.label))) : out;
+  }
   if (an.rows[chain]) return an.rows[chain].map(f => ({ label: f, insert: f, kind: "field" as const, detail: "field of " + chain, doc: "Selected column in the query that produced " + chain + "." }));
   return [];
 }
 
 /** Python completions. `before` is the current line up to the caret; start is relative to it. */
-export function pyCompletions(before: string, text: string, an: Analysis, forced: boolean): CompletionResult | null {
+export function pyCompletions(before: string, text: string, an: Analysis, forced: boolean, schema: Schema = {}): CompletionResult | null {
   const m = before.match(/([A-Za-z_]\w*(?:\.\w+)*)\.(\w*)$/);
   if (m) {
-    const items = rank(membersOf(m[1], an), m[2]);
+    const items = rank(membersOf(m[1], an, schema), m[2]);
     return items.length ? { items, start: before.length - m[2].length } : null;
   }
   const w = (before.match(/[A-Za-z_]\w*$/) || [""])[0];

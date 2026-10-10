@@ -6,6 +6,7 @@ import { EditorView, keymap } from "@codemirror/view";
 import { tokens } from "@/lib/analysis/guard";
 import { analyze, callAt, ctxAt, resolveApi } from "@/lib/analysis/analyze";
 import { pyCompletions, sqlCompletions } from "@/lib/analysis/complete";
+import { stringCompletions } from "@/lib/analysis/strings";
 import { runChecks, usesWriteHelpers } from "@/lib/analysis/checks";
 import { KINDCH } from "@/lib/analysis/data";
 import type { CompletionItem, Diag, Schema } from "@/lib/analysis/types";
@@ -59,15 +60,19 @@ function completionSource(hooks: EditorHooks) {
   return (ctx: CompletionContext): CompletionResult | null => {
     const text = ctx.state.doc.toString(), caret = ctx.pos, toks = tokens(text), c = ctxAt(toks, caret);
     const { schema } = hooks.getCtx();
-    if (c && (c.t === "comment" || c.t === "str")) return null;
+    if (c && c.t === "comment") return null;
     if (!ctx.explicit && ctx.state.selection.main.from !== ctx.state.selection.main.to) return null;
     let res: { items: CompletionItem[]; from: number } | null = null;
-    if (c && c.t === "tstr") {
+    if (c && c.t === "str") {
+      // doctype / field names inside call arguments, e.g. frappe.get_doc("Sal|
+      const r = stringCompletions(text, caret, c.tok, toks, analyze(text, schema), schema, ctx.explicit);
+      if (r) res = { items: r.items, from: r.start };
+    } else if (c && c.t === "tstr") {
       const k = c.tok, full = text.slice(k.s + 3, c.closed ? k.e - 3 : k.e), b = text.slice(k.s + 3, caret);
       const r = sqlCompletions(b, full, schema, ctx.explicit, text[caret] || "");
       if (r) res = { items: r.items, from: k.s + 3 + r.start };
     } else {
-      const line = ctx.state.doc.lineAt(caret), r = pyCompletions(text.slice(line.from, caret), text, analyze(text, schema), ctx.explicit);
+      const line = ctx.state.doc.lineAt(caret), r = pyCompletions(text.slice(line.from, caret), text, analyze(text, schema), ctx.explicit, schema);
       if (r) res = { items: r.items, from: line.from + r.start };
     }
     if (!res || !res.items.length) return null;

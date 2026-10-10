@@ -56,20 +56,41 @@ export function selectFields(sql: string, schema: Schema): string[] {
   return [...new Set(out)];
 }
 
+/** Child doctype behind a Table field, e.g. ("Sales Invoice", "items") -> "Sales Invoice Item". */
+export function childDoctype(schema: Schema, doctype: string, field: string): string | null {
+  const t = schema[doctype]?.types?.[field];
+  const m = t && t.match(/^Table(?: MultiSelect)? → (.+)$/);
+  return m ? m[1] : null;
+}
+
 /** Variables holding documents, and variables holding query rows with their column names. */
 export function analyze(text: string, schema: Schema): Analysis {
-  const docVars = new Set<string>(), rows: Record<string, string[]> = {};
+  const docVars = new Set<string>(), rows: Record<string, string[]> = {}, docTypes: Record<string, string> = {};
   let m: RegExpExecArray | null;
   const re1 = /(\w+)\s*=\s*frappe\.(?:get_doc|new_doc|copy_doc|get_cached_doc|get_last_doc)\(/g;
-  while ((m = re1.exec(text))) docVars.add(m[1]);
+  while ((m = re1.exec(text))) {
+    docVars.add(m[1]);
+    // the doctype is the first argument, or the "doctype" key of a dict: get_doc({"doctype": "Note", ...})
+    const inner = balanced(text, m.index + m[0].length - 1);
+    const dt = inner.match(/^\s*["']([^"'\n]+)["']/) || inner.match(/^\s*\{[\s\S]*?["']doctype["']\s*:\s*["']([^"'\n]+)["']/);
+    if (dt && schema[dt[1]]) docTypes[m[1]] = dt[1];
+  }
   const re2 = /(\w+)\s*=\s*frappe\.db\.sql\(\s*("""|''')([\s\S]*?)\2/g;
   while ((m = re2.exec(text))) rows[m[1]] = selectFields(m[3], schema);
-  const re3 = /(\w+)\s*=\s*frappe\.get_(?:all|list)\(/g;
+  const re3 = /(\w+)\s*=\s*frappe\.(?:db\.)?get_(?:all|list)\(/g;
   while ((m = re3.exec(text))) {
     const inner = balanced(text, m.index + m[0].length - 1), f = inner.match(/fields\s*=\s*\[([^\]]*)\]/);
-    rows[m[1]] = f ? [...f[1].matchAll(/["']([^"']+)["']/g)].map(x => x[1]) : ["name"];
+    const dt = inner.match(/^\s*["']([^"'\n]+)["']/), picked = f ? [...f[1].matchAll(/["']([^"']+)["']/g)].map(x => x[1]) : ["name"];
+    // fields=["*"] selects every column of the doctype
+    rows[m[1]] = picked.includes("*") && dt && schema[dt[1]] ? schema[dt[1]].cols.slice() : picked;
   }
   for (let k = 0; k < 4; k++) {
+    // for it in doc.items / doc.get("items"): it is a row of the child doctype
+    const rc = /for\s+(\w+)\s+in\s+(\w+)\s*(?:\.\s*(\w+)|\.\s*get\(\s*["'](\w+)["']\s*\))\s*:/g;
+    while ((m = rc.exec(text))) {
+      const parent = docTypes[m[2]], child = parent && childDoctype(schema, parent, m[3] || m[4]);
+      if (child && schema[child] && !docTypes[m[1]]) docTypes[m[1]] = child;
+    }
     const re = /for\s+(\w+)\s+in\s+(\w+)\b/g;
     while ((m = re.exec(text))) if (rows[m[2]] && !rows[m[1]]) rows[m[1]] = rows[m[2]];
     const re4 = /for\s+\w+\s*,\s*(\w+)\s+in\s+enumerate\(\s*(\w+)\s*\)/g;
@@ -77,7 +98,7 @@ export function analyze(text: string, schema: Schema): Analysis {
     const re5 = /(\w+)\s*=\s*\[\s*(\w+)\s+for\s+\2\s+in\s+(\w+)/g;
     while ((m = re5.exec(text))) if (rows[m[3]] && !rows[m[1]]) rows[m[1]] = rows[m[3]];
   }
-  return { docVars, rows };
+  return { docVars, rows, docTypes };
 }
 
 /** The call the caret is inside, e.g. { name: "frappe.db.get_value", arg: 1 }. */

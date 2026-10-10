@@ -20,6 +20,20 @@ export const SCHEMA0: Schema = {
   "Customer": { cols: cols("customer_name customer_type customer_group territory tax_id default_currency disabled mobile_no email_id") },
 };
 
+// child tables of the fallback doctypes, in the same "Table → Child" form the live schema uses
+const FALLBACK_TABLES: [string, string, string][] = [
+  ["Sales Invoice", "items", "Sales Invoice Item"],
+  ["Sales Invoice", "taxes", "Sales Taxes and Charges"],
+  ["Sales Invoice", "payment_schedule", "Payment Schedule"],
+  ["Journal Entry", "accounts", "Journal Entry Account"],
+  ["Payment Entry", "references", "Payment Entry Reference"],
+];
+for (const [parent, field, child] of FALLBACK_TABLES) {
+  const t = SCHEMA0[parent];
+  if (!t.cols.includes(field)) t.cols.push(field);
+  t.types = { ...t.types, [field]: "Table → " + child };
+}
+
 const NOT_V13 = "Not available in the v13 console. ";
 const mkApi = (n: string, p: string | null, d: string, ins?: string | null, k?: Kind): ApiEntry => ({
   n,

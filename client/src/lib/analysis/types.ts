@@ -36,6 +36,8 @@ export type Schema = Record<string, SchemaTable>;
 export interface Analysis {
   docVars: Set<string>;
   rows: Record<string, string[]>;
+  /** variable -> doctype it holds (documents, and child rows from `for it in doc.items`) */
+  docTypes: Record<string, string>;
 }
 
 export type Level = "error" | "warn" | "info";
