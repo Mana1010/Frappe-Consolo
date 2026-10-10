@@ -14,7 +14,8 @@ async function bootstrap() {
   setupApp(app).enableShutdownHooks();
   const config = app.get(ConfigService);
   const port = config.getOrThrow<number>('PORT');
-  await app.listen(port, '127.0.0.1');
+  const host = process.env.HOST?.trim() || '127.0.0.1';
+  await app.listen(port, host);
   const log = new Logger('Bootstrap');
   log.log(`API on http://127.0.0.1:${port}/api`);
   log.log(

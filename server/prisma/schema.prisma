@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL_PROD")
+  url       = env("DATABASE_URL")
   // set from NODE_ENV by src/config/load-env.ts and scripts/prisma.mjs; never edit these two in .env
   directUrl = env("DIRECT_URL")
 }
