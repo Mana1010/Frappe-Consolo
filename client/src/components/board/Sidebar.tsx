@@ -34,7 +34,7 @@ export function Sidebar() {
       <aside
         id="side"
         aria-label="Reference panel"
-        className={`${open ? "flex" : "hidden"} fixed inset-y-0 left-0 z-[12] w-[min(88vw,320px)] min-h-0 flex-col border-r border-line bg-panel shadow-pop wide:static wide:z-auto wide:flex wide:w-auto wide:shadow-none`}
+        className={`${open ? "flex" : "hidden"} fixed inset-y-0 left-0 z-12 w-[min(88vw,320px)] min-h-0 flex-col border-r border-line bg-panel shadow-pop wide:static wide:z-auto wide:flex wide:w-auto wide:shadow-none`}
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
         onKeyDown={(e) => {
           if (e.key === "Escape" && open)

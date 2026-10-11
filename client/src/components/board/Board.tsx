@@ -40,10 +40,10 @@ export function Board() {
   }, [pending, hydrated]);
 
   return (
-    <div className="grid h-dvh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
+    <div className="grid max-h-dvh h-vh grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
       <TopBar onRun={run} />
       <ServerBanner />
-      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] wide:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] wide:grid-cols-[300px_minmax(0,1fr)]">
         <Sidebar />
         <main className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto_auto]">
           <div className="min-h-0 min-w-0 bg-editor">
