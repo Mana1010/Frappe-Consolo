@@ -722,3 +722,100 @@
     height: auto;
   }
 }
+
+/* doctype preview panel (right side, resizable from its left edge) */
+@layer components {
+  .preview-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    min-width: 280px;
+    max-width: 75vw;
+    min-height: 0;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+  }
+  .preview-grip {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -4px;
+    width: 8px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+  }
+  .preview-grip:hover,
+  .preview-grip:focus-visible {
+    background: var(--sel);
+  }
+  .preview-tab {
+    flex: none;
+    width: 26px;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--mute);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .preview-tab:hover {
+    color: var(--ink);
+    background: var(--sel);
+  }
+  .preview-tab span {
+    display: inline-block;
+    writing-mode: vertical-rl;
+    white-space: nowrap;
+    max-height: 60vh;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .schema-eye {
+    flex: none;
+    border: 0;
+    background: transparent;
+    color: var(--mute);
+    border-radius: 4px;
+    padding: 0 5px;
+    font: 11px/18px var(--font-mono);
+    opacity: 0.6;
+  }
+  details:hover > summary .schema-eye,
+  .schema-eye:focus-visible,
+  .schema-eye[aria-pressed="true"] {
+    opacity: 1;
+  }
+  .schema-eye:hover,
+  .schema-eye[aria-pressed="true"] {
+    color: var(--accent);
+    background: var(--sel);
+  }
+}
+
+@media (max-width: 860px) {
+  /* on phones the panel floats over the editor instead of squeezing it */
+  .preview-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 14;
+    max-width: 100vw;
+    width: min(100vw, 420px) !important;
+    box-shadow: var(--shadow);
+  }
+  .preview-grip {
+    display: none;
+  }
+  .preview-tab {
+    position: fixed;
+    right: 0;
+    top: 30%;
+    height: 160px;
+    z-index: 14;
+    border-radius: 6px 0 0 6px;
+    border: 1px solid var(--line);
+  }
+}

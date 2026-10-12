@@ -31,6 +31,11 @@ export function TopBar({ onRun }: { onRun: (k: "read" | "dry") => void }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(editorBridge.getCode()); toast("Script copied"); } catch { toast("Select the text and press Ctrl+C"); }
   };
+  const format = () => {
+    const n = editorBridge.format();
+    toast(n ? "Formatted " + n + " line" + (n === 1 ? "" : "s") + " (Ctrl+Z to undo)" : "Indentation already looks good");
+    editorBridge.focus();
+  };
   const clear = () => {
     const go = () => { editorBridge.setCode(""); };
     if (!editorBridge.getCode().trim()) go(); else ui().openDialog({ t: "confirm", title: "Clear the editor?", yes: "Clear", onYes: go });
@@ -47,6 +52,7 @@ export function TopBar({ onRun }: { onRun: (k: "read" | "dry") => void }) {
         <button className="btn" onClick={() => ui().openDialog({ t: "help" })}>Help</button>
         <button className="btn" onClick={toggleTheme}>Theme</button>
         <button className="btn" onClick={clear}>Clear</button>
+        <button className="btn" onClick={format} title="Fix indentation: 4 spaces per level, tabs to spaces (Shift+Alt+F)">Format</button>
         <button className="btn" onClick={copy}>Copy script</button>
         <ConnectionSelect />
         <button className="btn btn-primary" disabled={!!busy} onClick={() => onRun("read")} title="Run on the connected site (Ctrl+Enter)">{busy === "read" ? "Running…" : "Run"}</button>

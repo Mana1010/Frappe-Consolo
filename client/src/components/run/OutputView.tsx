@@ -10,7 +10,7 @@ export const fmtMs = (ms: number | null | undefined) => ms == null ? "" : ms < 1
 
 const isTraceback = (s: string | null) => !!s && /^Traceback \(most recent call last\)/m.test(s);
 
-function Json({ text }: { text: string }) {
+export function Json({ text }: { text: string }) {
   return <>{hlJson(text).map((p, i) => (p.cls ? <span key={i} className={p.cls}>{p.text}</span> : p.text))}</>;
 }
 

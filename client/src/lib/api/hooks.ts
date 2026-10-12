@@ -13,6 +13,7 @@ export const qk = {
   me: ["me"] as const,
   connections: ["connections"] as const,
   schema: (id: string) => ["schema", id] as const,
+  sample: (id: string, doctype: string) => ["sample", id, doctype] as const,
   scripts: ["scripts"] as const,
   notes: ["notes"] as const,
   runs: (f: RunFilters) => ["runs", f] as const,
@@ -49,6 +50,17 @@ export function useEffectiveSchema() {
   const conn = useActiveConnection();
   const q = useSchemaQuery(conn?.id);
   return useMemo(() => ({ schema: q.data ? schemaFromLive(q.data.doctypes) : SCHEMA0, live: q.data ?? null }), [q.data]);
+}
+
+/** First record of a doctype on a connection (only fetched when there is a usable secret). */
+export function useSampleQuery(id: string | null | undefined, doctype: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.sample(id || "", doctype || ""),
+    queryFn: () => connectionsApi.sample(id as string, doctype as string),
+    enabled: enabled && !!id && !!doctype,
+    staleTime: 60_000,
+    retry: false,
+  });
 }
 
 export function useScripts(enabled: boolean) {

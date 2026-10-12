@@ -1,6 +1,7 @@
 import { balanced, blank, lineOf, readOnlyScan, writeModeScan, type Tok } from "./guard";
 import { DICTM, NOT_IN_V13, UTIL_NAMES } from "./data";
 import { parseTables } from "./analyze";
+import { checkIndent } from "./indent";
 import type { Analysis, Diag, Level, Schema } from "./types";
 
 export interface CheckOpts {
@@ -31,7 +32,8 @@ export function runChecks(text: string, toks: Tok[], schema: Schema, an: Analysi
   }
   st.forEach(t => add(lineOf(text, t.i), "error", "'" + t.c + "' is never closed"));
   toks.forEach(k => { if (k.t === "tstr" && !k.closed) add(lineOf(text, k.s), "error", "Triple-quoted string is never closed"); });
-  if (/^\t/m.test(text) && /^ +\S/m.test(text)) add(lineOf(text, text.search(/^\t/m)), "warn", "Tabs and spaces are mixed. Python will raise an indentation error.");
+  // an unclosed bracket or string makes every following line look like a continuation; fix that first
+  if (!out.length) checkIndent(text).forEach(d => add(d.line, d.level, d.msg + (d.level === "info" ? "" : " Format (Shift+Alt+F) can fix this.")));
   let m: RegExpExecArray | null;
   const imp = /^[ \t]*(?:from\s+\S+\s+import|import)\s+\S.*$/gm;
   while ((m = imp.exec(code))) add(lineOf(text, m.index), "warn", "Imports may be blocked in the System Console sandbox (v13). Prefer frappe.utils.flt(...) style calls.");

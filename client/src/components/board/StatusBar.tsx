@@ -13,7 +13,7 @@ export function StatusBar() {
       {n > 0 && <span>{n} to review</span>}
       {conn?.frappeVersion && <span className="hidden wide:inline">Frappe {conn.frappeVersion}</span>}
       <span className="flex-1" />
-      <span className="hidden truncate wide:inline">Ctrl+Enter run · Ctrl+Space suggestions · Ctrl+/ comment · Tab indent</span>
+      <span className="hidden truncate wide:inline">Ctrl+Enter run · Ctrl+Space suggestions · Shift+Alt+F format · Ctrl+/ comment · Tab indent</span>
     </div>
   );
 }

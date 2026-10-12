@@ -29,6 +29,8 @@ export interface ConnectionInput {
 export type ConnectionPatch = Partial<Omit<ConnectionInput, "temporary">> & { writable?: boolean; confirmName?: string };
 
 export interface SchemaDto { syncedAt: string; doctypeCount: number; doctypes: LiveDoctype[] }
+/** First record of a doctype; doc is null when it has none. */
+export interface SampleDto { doctype: string; doc: Record<string, unknown> | null }
 
 export interface ScriptDto {
   id: string;

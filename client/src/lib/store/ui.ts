@@ -38,7 +38,9 @@ interface UiState {
   /** A run requested from a dialog (e.g. after entering the secret). */
   queuedRun: { kind: RunKind; nonce: number } | null;
   busy: RunKind | "commit" | null;
-  set: (p: Partial<Omit<UiState, "set" | "showToast" | "openDialog" | "closeDialog">>) => void;
+  /** Doctype shown in the preview panel; null = panel closed. */
+  previewDoctype: string | null;
+  set:(p: Partial<Omit<UiState, "set" | "showToast" | "openDialog" | "closeDialog">>) => void;
   showToast: (msg: string) => void;
   openDialog: (d: Dialog) => void;
   closeDialog: () => void;
@@ -59,6 +61,7 @@ export const useUi = create<UiState>(set => ({
   pendingLoad: null,
   queuedRun: null,
   busy: null,
+  previewDoctype: null,
   set: p => set(p),
   showToast: msg => set({ toast: { msg, id: Date.now() } }),
   openDialog: d => set({ dialog: d }),

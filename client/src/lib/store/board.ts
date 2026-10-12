@@ -19,6 +19,9 @@ interface BoardState {
   padRect: PadRect | null;
   /** Guest notes and the offline fallback for signed-in users. */
   notes: { content: string; updatedAt: string } | null;
+  /** Doctype preview panel: width in px, and collapsed to a tab on the right edge. */
+  previewWidth: number | null;
+  previewHidden: boolean;
   set: (p: Partial<Omit<BoardState, "set">>) => void;
 }
 
@@ -37,6 +40,8 @@ export const useBoard = create<BoardState>()(
       padAuto: true,
       padRect: null,
       notes: null,
+      previewWidth: null,
+      previewHidden: false,
       set: p => set(p),
     }),
     {

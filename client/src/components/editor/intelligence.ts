@@ -7,6 +7,7 @@ import { tokens } from "@/lib/analysis/guard";
 import { analyze, callAt, ctxAt, resolveApi } from "@/lib/analysis/analyze";
 import { pyCompletions, sqlCompletions } from "@/lib/analysis/complete";
 import { stringCompletions } from "@/lib/analysis/strings";
+import { formatView } from "./bridge";
 import { runChecks, usesWriteHelpers } from "@/lib/analysis/checks";
 import { KINDCH } from "@/lib/analysis/data";
 import type { CompletionItem, Diag, Schema } from "@/lib/analysis/types";
@@ -144,6 +145,7 @@ export function boardIntelligence(hooks: EditorHooks): Extension {
     backtickPair,
     Prec.highest(keymap.of([
       { key: "Mod-Enter", run: () => { hooks.onRun?.(); return true; } },
+      { key: "Shift-Alt-f", run: v => { formatView(v); return true; } },
       { key: "Tab", run: v => (completionStatus(v.state) === "active" ? acceptCompletion(v) : insertSpaces(v)), shift: indentLess },
     ])),
     EditorView.updateListener.of(u => {

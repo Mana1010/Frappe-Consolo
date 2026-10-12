@@ -1,4 +1,13 @@
-import { Controller, Get, HttpCode, Param, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
+import { SampleRequestDto } from './sample.dto';
 import type { Response } from 'express';
 import { Ctx } from '../auth/auth.decorators';
 import type { ReqCtx } from '../auth/auth.types';
@@ -18,5 +27,15 @@ export class SchemaController {
   @HttpCode(200)
   sync(@Ctx() ctx: ReqCtx, @Param('id') id: string) {
     return this.svc.sync(ctx, id);
+  }
+
+  @Post('sample')
+  @HttpCode(200)
+  sample(
+    @Ctx() ctx: ReqCtx,
+    @Param('id') id: string,
+    @Body() body: SampleRequestDto,
+  ) {
+    return this.svc.sample(ctx, id, body.doctype);
   }
 }

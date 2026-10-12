@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { ConnectionDto, ConnectionInput, ConnectionPatch, NoteDto, RunDto, RunFilters, RunPage, SchemaDto, ScriptDto, UserDto } from "./types";
+import type { ConnectionDto, ConnectionInput, ConnectionPatch, NoteDto, RunDto, RunFilters, RunPage, SampleDto, SchemaDto, ScriptDto, UserDto } from "./types";
 
 const d = <T,>(p: Promise<{ data: T }>) => p.then(r => r.data);
 
@@ -20,6 +20,7 @@ export const connectionsApi = {
   persist: (id: string) => d<ConnectionDto>(api.post(`/connections/${id}/persist`)),
   schema: (id: string) => d<SchemaDto | null>(api.get(`/connections/${id}/schema`)).then(r => r || null),
   syncSchema: (id: string) => d<SchemaDto>(api.post(`/connections/${id}/schema/sync`, undefined, { timeout: 300_000 })),
+  sample: (id: string, doctype: string) => d<SampleDto>(api.post(`/connections/${id}/schema/sample`, { doctype })),
 };
 
 export const scriptsApi = {

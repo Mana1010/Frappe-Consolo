@@ -13,6 +13,7 @@ import {
   SchemaDoctype,
   SchemaDto,
 } from './schema.parse';
+import { DOCTYPE_RE, parseSample, sampleScript, SampleDto } from './sample';
 
 const toDto = (s: SchemaCache): SchemaDto => ({
   syncedAt: s.syncedAt,
@@ -79,5 +80,35 @@ export class SchemaService {
       update: row,
     });
     return dto;
+  }
+
+  /** First record of a doctype (read-only, commit 0); doc is null when there are none. */
+  async sample(ctx: ReqCtx, id: string, doctype: string): Promise<SampleDto> {
+    if (!DOCTYPE_RE.test(doctype))
+      throw new ApiError(400, 'That is not a valid doctype name.', {
+        code: 'INVALID_DOCTYPE',
+      });
+    const { creds } = await this.conns.credsFor(ctx, id);
+    let out: string;
+    try {
+      out = await this.frappe.executeCode(creds, sampleScript(doctype), false);
+    } catch (e) {
+      if (e instanceof FrappeError)
+        throw new ApiError(502, runFailureMessage(e), { code: e.code });
+      throw e;
+    }
+    try {
+      if (isTraceback(out)) throw new Error(out.trim().split('\n').pop());
+      return parseSample(doctype, out);
+    } catch (e) {
+      throw new ApiError(
+        502,
+        'Could not load a ' +
+          doctype +
+          ' record: ' +
+          (e instanceof Error ? e.message : String(e)),
+        { code: 'SAMPLE_FAILED' },
+      );
+    }
   }
 }

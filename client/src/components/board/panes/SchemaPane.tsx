@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { connectionsApi } from "@/lib/api/endpoints";
 import { errMsg } from "@/lib/api/client";
 import { qk, useActiveConnection, useEffectiveSchema, useSchemaQuery } from "@/lib/api/hooks";
-import { toast } from "@/lib/store/ui";
+import { toast, useUi } from "@/lib/store/ui";
+import { useBoard } from "@/lib/store/board";
 import { editorBridge } from "@/components/editor/bridge";
 import { closeDrawerIfNarrow } from "../Sidebar";
 
@@ -18,6 +19,7 @@ export function SchemaPane() {
   const sq = useSchemaQuery(conn?.id);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const preview = useUi(s => s.previewDoctype);
 
   const sync = useMutation({
     mutationFn: () => connectionsApi.syncSchema(conn!.id),
@@ -56,7 +58,17 @@ export function SchemaPane() {
             const o = (e.currentTarget as HTMLDetailsElement).open;
             setOpen(s => { if (o === s.has(r.t)) return s; const n = new Set(s); if (o) n.add(r.t); else n.delete(r.t); return n; });
           }}>
-            <summary className="cursor-pointer px-0.5 py-1 font-medium">{r.t}<small className="ml-1 font-normal text-mute">{r.all}{r.istable ? " · child" : ""}</small></summary>
+            <summary className="cursor-pointer px-0.5 py-1 font-medium">
+              {r.t}<small className="ml-1 font-normal text-mute">{r.all}{r.istable ? " · child" : ""}</small>
+              <button className="schema-eye float-right" aria-pressed={preview === r.t} title={"Preview a " + r.t + " record as JSON"} aria-label={"Preview " + r.t + " as JSON"}
+                onClick={e => {
+                  // a button inside <summary> would also toggle the details; keep it to the preview
+                  e.preventDefault(); e.stopPropagation();
+                  useUi.getState().set({ previewDoctype: preview === r.t ? null : r.t });
+                  useBoard.getState().set({ previewHidden: false });
+                  closeDrawerIfNarrow();
+                }}>{"{ }"}</button>
+            </summary>
             {isOpen && (
               <div className="flex flex-wrap gap-[3px] pb-2 pl-3.5">
                 {r.cols.map(c => (

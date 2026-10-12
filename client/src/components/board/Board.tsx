@@ -8,6 +8,7 @@ import { NotesPad } from "@/components/notes/NotesPad";
 import { ServerBanner } from "@/components/ui/ServerBanner";
 import { Dock } from "./Dock";
 import { EditorPane } from "./EditorPane";
+import { PreviewPanel } from "./PreviewPanel";
 import { Sidebar } from "./Sidebar";
 import { StatusBar } from "./StatusBar";
 import { TopBar } from "./TopBar";
@@ -45,13 +46,16 @@ export function Board() {
       <ServerBanner />
       <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] wide:grid-cols-[300px_minmax(0,1fr)]">
         <Sidebar />
-        <main className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto_auto]">
-          <div className="min-h-0 min-w-0 bg-editor">
-            <EditorPane onRun={runRead} />
-          </div>
-          <Dock />
-          <StatusBar />
-        </main>
+        <div className="flex min-h-0 min-w-0">
+          <main className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto_auto]">
+            <div className="min-h-0 min-w-0 bg-editor">
+              <EditorPane onRun={runRead} />
+            </div>
+            <Dock />
+            <StatusBar />
+          </main>
+          <PreviewPanel />
+        </div>
       </div>
       <NotesPad />
       <DialogHost />
